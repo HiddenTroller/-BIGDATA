@@ -1,44 +1,68 @@
 #!/usr/bin/env python3
 """Week 3 · Task 2 — Find the crossover on your own machine.
 
-Textbook §3.4.
+Textbook §3.4. The timing results depend on your machine; run this script at
+several sizes and record where brute force stops being usable.
 
-Everybody knows brute force is quadratic and LSH is not. That is not the
-interesting question. The interesting question is **where, on the machine in
-front of you, does it start to matter** - and that answer is yours alone. It
-depends on your CPU, your memory, and how big your shingle sets are.
-
-This script gives you the timing loop. The two methods are yours: import them
-from Task 1 and Task 3.
-
-    python3 task2_crossover.py --sizes 500,1000,2000,4000
-    python3 task2_crossover.py --sizes 8000,16000          # keep going
-
-Write down where it hurts. That is the deliverable.
+    python3 task2_crossover.py --sizes 250,500,1000,2000
+    python3 task2_crossover.py --sizes 4000,8000 --activity "browser and IDE open"
 """
-import argparse, json, os, platform, time, tracemalloc
+import argparse, ctypes, json, os, platform, time, tracemalloc
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
 
 
-def machine():
+def total_memory_bytes():
+    """Return installed physical RAM without requiring a third-party package."""
+    if hasattr(os, "sysconf"):
+        try:
+            return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+        except (OSError, ValueError):
+            pass
+
+    if platform.system() == "Windows":
+        class MemoryStatusEx(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = MemoryStatusEx()
+        status.dwLength = ctypes.sizeof(status)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            return status.ullTotalPhys
+    return None
+
+
+def machine(activity):
     return {
         "platform": platform.platform(),
         "processor": platform.processor() or platform.machine(),
+        "physical_memory_bytes": total_memory_bytes(),
         "python": platform.python_version(),
+        "other_activity": activity,
     }
 
 
 def timed(fn, *args):
-    """Wall time and peak memory of one call."""
+    """Return result, wall time, and peak traced Python allocation."""
     tracemalloc.start()
-    t0 = time.perf_counter()
-    result = fn(*args)
-    elapsed = time.perf_counter() - t0
-    _, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-    return result, elapsed, peak
+    try:
+        t0 = time.perf_counter()
+        result = fn(*args)
+        elapsed = time.perf_counter() - t0
+        _, peak = tracemalloc.get_traced_memory()
+        return result, elapsed, peak
+    finally:
+        tracemalloc.stop()
 
 
 def main():
@@ -46,6 +70,8 @@ def main():
     p.add_argument("--sizes", default="250,500,1000,2000",
                    help="comma-separated document counts to try")
     p.add_argument("--threshold", type=float, default=0.6)
+    p.add_argument("--activity", default="not recorded",
+                   help="other notable apps/work running during this measurement")
     a = p.parse_args()
     os.makedirs(OUT, exist_ok=True)
 
@@ -82,11 +108,14 @@ def main():
         print(line)
 
     path = os.path.join(OUT, "crossover.json")
-    prior = json.load(open(path)) if os.path.exists(path) else {"runs": []}
-    prior["machine"] = machine()
+    prior = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {"runs": []}
+    prior["machine"] = machine(a.activity)
     prior["runs"].extend(rows)
-    json.dump(prior, open(path, "w"), indent=2)
+    with open(path, "w", encoding="utf-8") as output:
+        json.dump(prior, output, indent=2)
     print(f"\n  -> out/crossover.json  ({len(prior['runs'])} measurement(s))")
+    print(f"  RAM: {prior['machine']['physical_memory_bytes']} bytes; "
+          f"other activity: {a.activity}")
     print("  Keep raising --sizes until something becomes unpleasant. Record where.")
 
 
