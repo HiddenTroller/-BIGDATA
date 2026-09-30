@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-"""Week 3 · Task 3 — Find the same pairs without comparing everything.
+"""Week 3 · Task 3 — LSH candidate generation with exact verification.
 
-Textbook §3.4.
-
-`BruteForce` compares every pair. On 3,000 documents that is 4.5 million
-comparisons and it is completely correct. On 3 million documents it is 4.5
-trillion and it is completely useless.
-
-Beat it. Find the same near-duplicate pairs while making far fewer comparisons.
-
-    python3 bench.py
-    python3 bench.py --yours
-
-The harness counts every call you make to `similarity()`. That is your score.
-It also checks **recall** - which of the truly similar pairs you found. Skipping
-comparisons is easy; skipping comparisons without losing the pairs is the task.
+Uses 200 deterministic minhash functions split into 50 bands of 4 rows.
+The S-curve transition estimate is (1 / 50) ** (1 / 4) ≈ 0.376, favoring
+recall above the task's 0.6 similarity threshold.
 """
+import random
+
+_HASHES = 200
+_BANDS = 50
+_PRIME = (1 << 61) - 1
+_SEED = 202603
 
 
 class BruteForce:
-    """Correct, and quadratic."""
+    """Correct reference implementation used by the harness."""
 
     def __init__(self, threshold):
         self.threshold = threshold
 
     def find(self, docs, similarity):
-        """docs is [set_of_shingles, ...]. Return {(i, j), ...} with i < j."""
         out = set()
         for i in range(len(docs)):
             for j in range(i + 1, len(docs)):
@@ -35,33 +29,50 @@ class BruteForce:
 
 
 class YourFinder:
-    """Your near-duplicate finder.
-
-        __init__(threshold)
-        find(docs, similarity) -> {(i, j), ...}
-
-    `similarity(a, b)` is the only way to compare two documents, and every call
-    is counted. Everything else - signatures, banding, bucketing - is free, in
-    the sense that the harness does not charge you for it. That is deliberate:
-    it is also roughly true at scale, where the comparison is the expensive
-    part and the hashing is linear.
-
-    Two knobs decide everything:
-
-        the number of hashes in a signature
-        how many bands you split it into
-
-    §3.4.2 gives you the relationship between those and the probability that a
-    pair at similarity s becomes a candidate. It is an S-curve, and where its
-    step sits is something you choose. Choose it on purpose and be able to say
-    why in observation.md - a threshold of 0.8 does not mean bands should be
-    anything in particular until you have done the arithmetic.
-
-    You may reuse your Task 1 code.
-    """
+    """Minhash documents, bucket bands, and exactly check candidate pairs."""
 
     def __init__(self, threshold):
-        raise NotImplementedError("write your finder")
+        if not 0 <= threshold <= 1:
+            raise ValueError("threshold must be between 0 and 1")
+        self.threshold = threshold
 
     def find(self, docs, similarity):
-        raise NotImplementedError
+        docs = list(docs)
+        if len(docs) < 2:
+            return set()
+
+        # Stable IDs make results independent of Python's randomized hash seed.
+        universe = set().union(*docs)
+        ordered = sorted(universe,
+                         key=lambda value: (type(value).__module__,
+                                            type(value).__qualname__, repr(value)))
+        item_id = {item: index for index, item in enumerate(ordered)}
+
+        rng = random.Random(_SEED)
+        coefficients = [(rng.randrange(1, _PRIME), rng.randrange(_PRIME))
+                        for _ in range(_HASHES)]
+        signatures = [[_PRIME] * _HASHES for _ in docs]
+        for doc_index, doc in enumerate(docs):
+            for item in doc:
+                item_number = item_id[item]
+                for hash_index, (a, b) in enumerate(coefficients):
+                    value = (a * item_number + b) % _PRIME
+                    if value < signatures[doc_index][hash_index]:
+                        signatures[doc_index][hash_index] = value
+
+        rows_per_band = _HASHES // _BANDS
+        candidates = set()
+        for band in range(_BANDS):
+            start = band * rows_per_band
+            end = start + rows_per_band
+            buckets = {}
+            for doc_index, signature in enumerate(signatures):
+                key = tuple(signature[start:end])
+                buckets.setdefault(key, []).append(doc_index)
+            for members in buckets.values():
+                for offset, i in enumerate(members):
+                    for j in members[offset + 1:]:
+                        candidates.add((i, j))
+
+        return {(i, j) for i, j in candidates
+                if similarity(docs[i], docs[j]) >= self.threshold}
