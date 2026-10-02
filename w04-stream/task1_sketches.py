@@ -13,7 +13,7 @@ approximating.
 
     python3 task1_sketches.py --verify
 """
-import argparse, random
+import argparse, random, hashlib, math, statistics
 
 
 class BloomFilter:
@@ -28,13 +28,23 @@ class BloomFilter:
     """
 
     def __init__(self, m, k, seed=246):
-        raise NotImplementedError("write the Bloom filter")
+        if m <= 0 or k <= 0:
+            raise ValueError('m and k must be positive')
+        self.m, self.k = m, k
+        self.key = hashlib.sha256(str(seed).encode()).digest()
+        self.bits = bytearray((m + 7) // 8)
+
+    def _indices(self, item):
+        raw = hashlib.shake_256(self.key + str(item).encode()).digest(8 * self.k)
+        for i in range(self.k):
+            yield int.from_bytes(raw[8*i:8*i+8], 'little') % self.m
 
     def add(self, item):
-        raise NotImplementedError
+        for i in self._indices(item):
+            self.bits[i >> 3] |= 1 << (i & 7)
 
     def __contains__(self, item):
-        raise NotImplementedError
+        return all(self.bits[i >> 3] & (1 << (i & 7)) for i in self._indices(item))
 
     def expected_fp_rate(self, n_inserted):
         """The textbook's predicted false-positive rate after n insertions.
@@ -42,10 +52,12 @@ class BloomFilter:
         §4.4.2 derives it. Return the number, do not measure it - the harness
         measures separately and compares the two.
         """
-        raise NotImplementedError
+        if n_inserted < 0:
+            raise ValueError('negative insertion count')
+        return (-math.expm1(-self.k * n_inserted / self.m)) ** self.k
 
 
-def flajolet_martin(stream, n_hashes=64, seed=246):
+def flajolet_martin(stream, n_hashes=64, seed=246, diagnostics=None):
     """Estimate how many DISTINCT items went past, in almost no memory.
 
     §4.5. Hash each item, count trailing zeros in the hash, keep the maximum.
@@ -67,7 +79,45 @@ def flajolet_martin(stream, n_hashes=64, seed=246):
 
     Return your estimate as a float.
     """
-    raise NotImplementedError("write Flajolet-Martin")
+    import numpy as np
+    if n_hashes <= 0:
+        raise ValueError('n_hashes must be positive')
+    rng = random.Random(seed)
+    salts = np.array([rng.getrandbits(64) for _ in range(n_hashes)], dtype=np.uint64)
+    maxima = np.zeros(n_hashes, dtype=np.uint8)
+    batch = []
+    count = 0
+    def consume():
+        # Fixed batches bound working memory independently of stream length.
+        values = np.array(batch, dtype=np.uint64)[:, None] ^ salts[None, :]
+        with np.errstate(over='ignore'):
+            values = (values ^ (values >> 30)) * np.uint64(0xbf58476d1ce4e5b9)
+            values = (values ^ (values >> 27)) * np.uint64(0x94d049bb133111eb)
+            values ^= values >> 31
+        low = values & (~values + np.uint64(1))
+        # frexp avoids floating-point log rounding for powers of two.
+        ranks = np.frexp(low.astype(np.float64))[1] - 1
+        ranks[values == 0] = 64
+        np.maximum(maxima, ranks.max(axis=0), out=maxima, casting='unsafe')
+        batch.clear()
+    for item in stream:
+        batch.append(int.from_bytes(hashlib.blake2b(str(item).encode(), digest_size=8).digest(), 'little'))
+        count += 1
+        if len(batch) == 256:
+            consume()
+    if batch:
+        consume()
+    if not count:
+        return 0.0
+    # Geometric means within groups suppress exponential outliers;
+    # the median across groups supplies another robust combination.
+    groups = np.array_split(maxima, min(8, n_hashes))
+    if diagnostics is not None:
+        estimates = [2.0 ** int(r) for r in maxima]
+        diagnostics.update(raw_mean=statistics.mean(estimates),
+                           raw_median=statistics.median(estimates),
+                           group_rule='median of group mean log2 estimates / 1.26 calibration')
+    return 2.0 ** statistics.median(float(g.mean()) for g in groups) / 1.26
 
 
 def reservoir_sample(stream, k, seed=246):
@@ -78,7 +128,18 @@ def reservoir_sample(stream, k, seed=246):
 
     Return a list of k items (or fewer if the stream was shorter).
     """
-    raise NotImplementedError("write reservoir sampling")
+    if k < 0:
+        raise ValueError('k must be nonnegative')
+    rng = random.Random(seed)
+    sample = []
+    for i, item in enumerate(stream):
+        if i < k:
+            sample.append(item)
+        elif k:
+            j = rng.randrange(i + 1)
+            if j < k:
+                sample[j] = item
+    return sample
 
 
 # ------------------------------------------------------------------- harness
@@ -144,3 +205,4 @@ if __name__ == "__main__":
     p.add_argument("--verify", action="store_true")
     a = p.parse_args()
     raise SystemExit(verify() if a.verify else p.print_help())
+

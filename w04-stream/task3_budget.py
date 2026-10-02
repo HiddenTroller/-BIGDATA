@@ -17,7 +17,7 @@ The whole point of this structure is that "no" means no. A filter that gets a
 better score by occasionally forgetting something it was given has not improved
 anything, it has broken the contract.
 """
-import hashlib
+import hashlib, sys
 
 
 class NaiveFilter:
@@ -64,14 +64,35 @@ class YourFilter:
     observation.md asks.
     """
 
+    __slots__ = ('bits', 'seed')
+    K = 7  # round((m/n) ln 2), for the specified ten bits per item
+
     def __init__(self, n_bits, seed=246):
-        raise NotImplementedError("write your filter")
+        self.seed = int(seed)
+        overhead = sys.getsizeof(self) + sys.getsizeof(self.seed)
+        overhead += sys.getsizeof(bytearray(1)) - 1
+        size = n_bits // 8 - overhead
+        if size <= 0:
+            raise ValueError('budget too small for filter metadata')
+        self.bits = bytearray(size)
+        if self.memory_bits() > n_bits:
+            raise ValueError('budget too small for metadata')
+
+    def _indices(self, item):
+        key = hashlib.sha256(str(self.seed).encode()).digest()
+        raw = hashlib.shake_256(key + str(item).encode()).digest(8 * self.K)
+        for i in range(self.K):
+            yield int.from_bytes(raw[8*i:8*i+8], 'little') % (len(self.bits) * 8)
 
     def add(self, item):
-        raise NotImplementedError
+        for i in self._indices(item):
+            self.bits[i >> 3] |= 1 << (i & 7)
 
     def __contains__(self, item):
-        raise NotImplementedError
+        return all(self.bits[i >> 3] & (1 << (i & 7)) for i in self._indices(item))
 
     def memory_bits(self):
-        raise NotImplementedError
+        # All exclusively owned persistent Python objects, including headers.
+        # Shared class/code and transient hash workspace are not per-filter state.
+        return 8 * sum(sys.getsizeof(x) for x in (self, self.bits, self.seed))
+

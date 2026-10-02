@@ -1,0 +1,72 @@
+{
+  "runs": [
+    {
+      "n": 100000,
+      "true_distinct": 36702,
+      "exact_s": 0.14727510000011534,
+      "exact_peak_bytes": 3925612,
+      "fm_estimate": 41882.97396612156,
+      "fm_s": 0.4457012999992003,
+      "fm_peak_bytes": 610208,
+      "fm_ratio": 1.1411632599346508
+    },
+    {
+      "n": 400000,
+      "true_distinct": 146970,
+      "exact_s": 0.6112787999991269,
+      "exact_peak_bytes": 11591308,
+      "fm_estimate": 153627.42587347783,
+      "fm_s": 1.834081299999525,
+      "fm_peak_bytes": 609811,
+      "fm_ratio": 1.0452978558445793
+    },
+    {
+      "n": 1600000,
+      "true_distinct": 587625,
+      "exact_s": 2.573423099998763,
+      "exact_peak_bytes": 46647606,
+      "fm_estimate": 588456.5080868772,
+      "fm_s": 7.389998400001787,
+      "fm_peak_bytes": 609811,
+      "fm_ratio": 1.0014150318432284
+    },
+    {
+      "n": 6400000,
+      "true_distinct": 2349909,
+      "exact_s": 11.07431120000183,
+      "exact_peak_bytes": 188287586,
+      "fm_estimate": 2353826.0323475087,
+      "fm_s": 29.446052600000257,
+      "fm_peak_bytes": 609812,
+      "fm_ratio": 1.0016668868230678
+    },
+    {
+      "n": 25000000,
+      "true_distinct": 9179304,
+      "exact_s": 43.18242240000109,
+      "exact_peak_bytes": 744742672,
+      "fm_estimate": 9415304.129390035,
+      "fm_s": 117.51342050000312,
+      "fm_peak_bytes": 610210,
+      "fm_ratio": 1.025710024353702
+    }
+  ],
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "ram_bytes": 33408483328,
+    "cpu": "AMD Ryzen 7 9800X3D 8-Core Processor",
+    "other_running": [
+      "Codex/ChatGPT",
+      "Discord",
+      "Chrome",
+      "Windows Explorer"
+    ],
+    "processor": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+    "python": "3.12.14"
+  },
+  "stopping_reason": {
+    "n": 25000000,
+    "resource": "time",
+    "detail": "Stopped at 25 million: exact counting takes tens of seconds per run, unsuitable for interactive repeated queries. RAM was not exhausted; this is a practical time limit, not an out-of-memory boundary."
+  }
+}

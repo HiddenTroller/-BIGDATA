@@ -21,7 +21,22 @@ OUT = os.path.join(HERE, "out")
 
 
 def machine():
+    import ctypes, subprocess
+    class Memory(ctypes.Structure):
+        _fields_ = [('length', ctypes.c_ulong), ('load', ctypes.c_ulong)] + [(name, ctypes.c_ulonglong) for name in ('total', 'available', 'page', 'availpage', 'virtual', 'availvirtual', 'extended')]
+    ram = None
+    cpu = platform.processor() or platform.machine()
+    if os.name == 'nt':
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'HARDWARE\DESCRIPTION\System\CentralProcessor\0') as key:
+            cpu = winreg.QueryValueEx(key, 'ProcessorNameString')[0].strip()
+        info = Memory()
+        info.length = ctypes.sizeof(info)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(info)):
+            ram = info.total
     return {"platform": platform.platform(),
+            "ram_bytes": ram, "cpu": cpu,
+            "other_running": ['Codex/ChatGPT', 'Discord', 'Chrome', 'Windows Explorer'],
             "processor": platform.processor() or platform.machine(),
             "python": platform.python_version()}
 
@@ -59,6 +74,10 @@ def main():
     except Exception:
         flajolet_martin = None
 
+    # Warm imports so FM's measurement counts its state/workspace rather than
+    # a one-time NumPy module import. Both methods still include stream memory.
+    if flajolet_martin is not None:
+        flajolet_martin(iter(()))
     rows = []
     for n in [int(x) for x in a.sizes.split(",")]:
         true, t_exact, m_exact = exact_distinct(n)
@@ -99,3 +118,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
