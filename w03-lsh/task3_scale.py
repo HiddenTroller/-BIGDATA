@@ -64,20 +64,18 @@ class YourFinder:
     You may reuse your Task 1 code.
     """
 
-    def __init__(self, threshold, num_hashes=120, bands=30, seed=246):
+    def __init__(self, threshold):
         if not 0 <= threshold <= 1:
             raise ValueError("threshold must be between 0 and 1")
-        if num_hashes <= 0 or bands <= 0 or num_hashes % bands:
-            raise ValueError("num_hashes must be positive and divisible by bands")
         self.threshold = threshold
-        self.num_hashes = num_hashes
-        self.bands = bands
-        rng = random.Random(seed)
+        self.num_hashes = 120
+        self.bands = 30
+        rng = random.Random(246)
         prime = 2_147_483_647
         self.hashes = [
             (lambda row, a=a, b=b: (a * row + b) % prime)
             for a, b in ((rng.randrange(1, prime), rng.randrange(prime))
-                         for _ in range(num_hashes))
+                         for _ in range(self.num_hashes))
         ]
 
     def find(self, docs, similarity):

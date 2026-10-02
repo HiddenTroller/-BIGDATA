@@ -68,4 +68,4 @@ tracemalloc 자체의 시간 비용이 있으므로 이 표의 시간과 tracing
 - 백그라운드: Observed: ChatGPT, Chrome, Edge, Discord, Windows services; no other benchmark intentionally running
 
 기존 `bench.build()[:n]`은 실제 데이터를 2,120개로 제한해 n=4,000 이상 측정을 잘못 표시했다.
-측정 스크립트만 고쳐 정확히 n개를 생성한다. 평가용 `bench.py`는 그대로 두었다.
+추가 실측은 저장소 밖의 측정용 코드에서 정확히 n개를 생성해 실행했다. 기존 `task2_crossover.py`와 평가용 `bench.py`의 원문은 보존했다. 큰 n을 원본 task2 스크립트에 입력하면 실제 문서는 최대 2,120개이므로, n=8,000 실측은 `task2.md`의 재현 코드와 같은 별도 측정 방식으로 실행해야 한다.
