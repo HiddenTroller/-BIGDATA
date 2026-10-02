@@ -1,0 +1,51 @@
+
+=== Task 1
+  ok    jaccard(S1, S4)                              0.6667
+  ok    jaccard(S1, S2)                              0.0
+  ok    jaccard on empty sets                        0.0
+  ok    signature of S1                              [1, 0]
+  ok    signature of S2                              [3, 2]
+  ok    signature of S3                              [0, 0]
+  ok    signature of S4                              [1, 0]
+  ok    S1 and S4 are candidates                     True
+  ok    S1 and S2 are not                            False
+
+  all ok
+  Note that S1 and S4 agree in both signature positions, which estimates
+  their similarity as 1.0 when it is actually 2/3. Two hashes is not many.
+  ok   [1] textbook example reproduced
+
+=== Task 2
+  ok   [2] A1 five or more sizes  - [32, 64, 125, 250, 500, 600, 650, 1000, 2000, 4000, 8000]
+  ok   [2] A1 spans 16x or more  - 250x
+  ok   [2] A6 machine recorded
+  ok   [2] out/curve.md exists
+
+=== Task 3
+  baseline     comparisons  2,246,140   recall 100.0%   precision 100.0%     6.37s
+  yours        comparisons        125   recall 100.0%   precision 100.0%     0.59s
+  ok   [3] R3 recall at least 90%  - 100.0%
+  ok   [3] R4 fewer comparisons  - 99.99% avoided
+ skip  [3] R5 S-curve arithmetic in observation.md  - graded by a human
+
+  7 passed, 0 failed, 1 skipped
+test_band_collisions_and_pair_deduplication (test_solution.SolutionTests.test_band_collisions_and_pair_deduplication) ... ok
+test_finder_exact_duplicates_empty_and_zero_threshold (test_solution.SolutionTests.test_finder_exact_duplicates_empty_and_zero_threshold) ... ok
+test_hash_each_populated_row_once (test_solution.SolutionTests.test_hash_each_populated_row_once) ... ok
+test_invalid_row_rejected (test_solution.SolutionTests.test_invalid_row_rejected) ... ok
+test_jaccard_empty_and_disjoint (test_solution.SolutionTests.test_jaccard_empty_and_disjoint) ... ok
+test_large_measurement_really_contains_requested_size (test_solution.SolutionTests.test_large_measurement_really_contains_requested_size) ... ok
+test_remainders_and_inconsistent_lengths_rejected (test_solution.SolutionTests.test_remainders_and_inconsistent_lengths_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.032s
+
+OK
+== w03-lsh/out/ ==
+
+  [ok]      crossover.json       timings from task2_crossover.py  (9,787 bytes)
+  [ok]      curve.md             the curve and where it broke  (3,930 bytes)
+  [ok]      bench.txt            python3 bench.py --yours  (470 bytes)
+  [ok]      observation.md       2-3 lines per task  (1,959 bytes)
+
+  Format check passed. Whether it is right is up to you.
