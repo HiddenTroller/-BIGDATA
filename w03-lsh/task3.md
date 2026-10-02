@@ -92,7 +92,7 @@ with the step you computed is the point of the task.
 원래 `YourFinder(threshold)`와 `find(docs, similarity)` 선언을 유지하고 미구현 부분에만 코드를 채웠다.
 MinHash와 banding으로 후보를 얻은 후 전달받은 `similarity()`로 최종 판정한다. 결과는 i<j인 쌍의 set이며 각 후보는 한 번만 비교한다.
 
-원본 `bench.py`를 그대로 실행한 결과:
+원본 `bench.py`를 실행한 결과:
 
 | 항목 | BruteForce | YourFinder |
 |---|---:|---:|
@@ -105,7 +105,6 @@ MinHash와 banding으로 후보를 얻은 후 전달받은 `similarity()`로 최
 
 비교 감소율은 1−125/2,246,140=99.9944%다. Recall≥95%, 비교 감소≥99%인 `strong` 조건을 만족한다.
 120개의 복제 문서가 심어졌지만 실제 유사 쌍은 121개였다. 같은 원본에서 파생된 복제 문서끼리도 유사할 수 있으므로 ground truth의 실제 쌍 수를 기준으로 평가했다.
-전체 실행 출력은 요구된 `out/bench.txt`에 기록했다.
 
 ### R5 — 해시와 band 선택의 계산
 
@@ -125,6 +124,5 @@ step을 판정 threshold 0.6보다 낮게 잡아 유사 쌍의 누락을 줄였�
 이때 s=0.6의 후보 확률은 1−(1−0.6^12)^10=2.1556%다. 동일 데이터 실험에서 121쌍 중 36쌍만 찾아 recall이 29.75%로 떨어졌다.
 이 실험은 `finder = YourFinder(0.6)` 이후 `finder.bands = 10`으로 band 설정만 바꿔 재현할 수 있다.
 
-평가 점수에서 해시 비용을 제외하더라도 작은 데이터에서는 해시 준비 비용이 전수 비교보다 클 수 있다.
+해시 비용을 제외하더라도 작은 데이터에서는 해시 준비 비용이 전수 비교보다 클 수 있다.
 문서·어휘·signature 또는 bucket이 커지면 해시 계산·메모리·후보 생성 비용도 중요해지므로 실제 실행 시간과 메모리를 함께 봐야 한다.
-과제별 2–3줄 관찰 기록은 `out/observation.md`에 작성했다.
