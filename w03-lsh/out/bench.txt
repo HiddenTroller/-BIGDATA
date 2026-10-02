@@ -1,0 +1,14 @@
+Command: python bench.py --yours
+Environment: Windows 11, Python 3.12.14, AMD Ryzen 7 9800X3D
+Captured from the unmodified harness on 2026-10-02.
+
+  2,120 documents, threshold 0.6
+  121 truly similar pairs
+
+  baseline     comparisons  2,246,140   recall 100.0%   precision 100.0%     6.34s
+  yours        comparisons        125   recall 100.0%   precision 100.0%     0.48s
+
+   ok    recall 100.0%
+   comparisons avoided  99.99%  (125 instead of 2,246,140)
+
+   -> strong
