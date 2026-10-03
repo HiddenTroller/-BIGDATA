@@ -107,4 +107,4 @@ p ≈ (1 − exp(−kn/m))^k
 python3 task1_sketches.py --verify
 ```
 
-네 검증 모두 통과했다. 기존 verify 검증 로직은 수정하지 않았다. 상세 기록은 [out/tests.txt](out/tests.txt), 서술 답안은 [out/observation.md](out/observation.md)에 있다.
+네 검증 모두 통과했다. 기존 verify 검증 로직은 수정하지 않았다.
