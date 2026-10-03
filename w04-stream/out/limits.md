@@ -1,4 +1,10 @@
-| n | distinct | exact seconds | exact MB | FM seconds | FM MB | estimate/truth |
+# 과제 2 — 메모리 한계 측정 결과
+
+## 스트림 크기별 측정값
+
+MB는 1,000,000바이트 기준이며, 추정 비율은 FM 추정값을 실제 서로 다른 원소 수로 나눈 값이다.
+
+| 스트림 길이 n | 실제 서로 다른 원소 수 | 정확한 집합 시간(s) | 정확한 집합 최대 메모리(MB) | FM 시간(s) | FM 최대 메모리(MB) | 추정값/실제값 |
 |---:|---:|---:|---:|---:|---:|---:|
 | 100,000 | 36,702 | 0.147 | 3.926 | 0.446 | 0.610 | 1.1412 |
 | 400,000 | 146,970 | 0.611 | 11.591 | 1.834 | 0.610 | 1.0453 |
@@ -6,12 +12,30 @@
 | 6,400,000 | 2,349,909 | 11.074 | 188.288 | 29.446 | 0.610 | 1.0017 |
 | 25,000,000 | 9,179,304 | 43.182 | 744.743 | 117.513 | 0.610 | 1.0257 |
 
-Machine: AMD Ryzen 7 9800X3D 8-Core Processor; 31.11 GiB RAM; Windows 11; Python 3.12.14. Other applications running: Codex/ChatGPT, Discord, Chrome, Windows Explorer.
+## A6 — 측정 환경
 
-A2: At 25,000,000 items, exact counting took 43.18 seconds and 744.74 MB. Tens of seconds per interactive query is unpleasant; time was the stopping constraint. The 31.11 GiB machine did NOT run out of RAM. No OOM threshold was measured or claimed. FM took 117.51 seconds: bounded space is not automatically faster.
+CPU는 AMD Ryzen 7 9800X3D 8-Core Processor, RAM은 약 31.11GiB, 운영체제는 Windows 11, Python 버전은 3.12.14이다. 당시 Codex/ChatGPT, Discord, Chrome, Windows 탐색기가 실행 중이었다.
 
-A4: Across 250x input growth, exact peak grew 189.71x (endpoint exponent 0.950, approximately O(n), with set resizing steps); FM grew 1.0000x (exponent 0.0000, approximately O(1) in n). Exact space is O(distinct); FM space is O(number of hashes * fixed batch size).
+## A2 — 중단 지점과 제약
 
-A5: Ratios in the table are measured, not corrected using the true count. Accuracy is not guaranteed to improve with n; these particular measurements happen to be close at larger sizes. FM keeps only 64 maxima and a fixed 256-item batch; it never stores the full stream.
+2,500만 개의 원소에서 정확한 집합 계산은 43.18초와 744.74MB를 사용했다. 대화형 조회를 반복할 때 매번 수십 초가 걸리는 시간 부담을 중단 이유로 기록했다. 약 31.11GiB RAM을 가진 이 PC에서 메모리가 부족해진 것은 아니며, 메모리 부족 오류가 발생하는 한계는 측정하지 않았다.
 
-Method: seed 246, distinct span floor(0.4*n), one pass per method, perf_counter wall time, tracemalloc peak bytes. NumPy is imported before tracing both methods. Peaks measure traced Python/NumPy allocations and stream-generator state, not total process RSS, all loaded modules, or physical RAM use. A fixed batch improves throughput at a constant ~0.61 MB working-memory cost. These are real local measurements from the user's Windows host.
+FM은 같은 입력에서 117.51초가 걸렸다. 사용 공간이 일정하다고 해서 실행 속도까지 자동으로 빨라지는 것은 아니다.
+
+## A4 — 메모리 증가율
+
+입력이 250배 증가하는 동안 정확한 집합의 최대 메모리는 약 189.71배 증가했다. 두 끝점으로 계산한 증가 지수는 0.950으로, 집합 크기 재조정에 따른 단계적인 변동은 있지만 대략 O(n)의 증가를 보였다.
+
+FM의 최대 메모리는 약 1.0000배였고 증가 지수는 0.0000으로, 스트림 길이 n에 대해 대략 O(1)이었다. 정확한 집합의 공간은 서로 다른 원소 수에 비례하며, FM의 작업 공간은 해시 수와 고정 배치 크기의 곱에 비례한다.
+
+## A5 — 추정 정확도
+
+표의 비율은 실제 측정값이며, 실제 정답을 이용해 추정값을 보정하지 않았다. 입력 길이 n이 커질수록 정확도가 반드시 개선되는 것은 아니다. 이번 측정에서는 큰 입력의 추정값이 실제 값에 가까웠지만, 마지막 크기에서는 오차가 다시 커졌다.
+
+FM은 64개 최댓값과 최대 256개의 고정 크기 배치만 유지하며 전체 스트림을 저장하지 않는다.
+
+## 측정 방법과 범위
+
+seed는 246이고 서로 다른 값의 범위는 floor(0.4·n)이다. 각 방법은 스트림을 한 번씩 순회했다. 실행 시간은 perf_counter로 측정하고, 최대 메모리는 tracemalloc으로 추적한 바이트 수이다. NumPy는 두 방법의 메모리 추적 전에 미리 불러와 일회성 모듈 로딩 비용을 제외했다.
+
+최대 메모리는 추적되는 Python/NumPy 할당과 스트림 생성기 상태를 포함한다. 프로세스 전체의 상주 메모리(RSS), 이미 불러온 모든 모듈, 물리 RAM 사용량을 나타내지는 않는다. 고정 배치를 사용해 처리 속도를 높였으며, 작업 메모리는 약 0.61MB로 일정하게 유지됐다. 이 결과는 사용자 Windows PC에서 직접 실행한 측정값이다.

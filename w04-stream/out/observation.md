@@ -1,16 +1,25 @@
-# Week 4 observations
+# 4주차 과제 관찰 및 해석
 
-## Task 1
-Bloom insertion only sets bits, and lookup checks the same deterministic positions: without deletion, every inserted item remains present. Predicted FP 0.860%, measured 0.840%; finite query sampling accounts for the small difference.
-FM combines mean log2 maxima within eight groups, then takes the median and divides by a fixed 1.26 calibration (approximate, not fitted per input). On the verification stream: raw arithmetic mean 79,328 (3.98x), raw median 16,384 (0.82x), grouped estimate 14,808 (0.742x), truth 19,953; exponential outliers spoil the raw mean. This is a maximum-trailing-zero estimator, not HyperLogLog.
-Reservoir Algorithm R uses j=randrange(i+1) and replaces only when j<k. A new item enters with probability k/(i+1); each retained prior item survives with probability i/(i+1). Induction gives every position k/n without knowing n and using at most k stored items.
+## 과제 1 — 스트림 요약 알고리즘
 
-## Task 2
-At 25,000,000 items exact counting took 43.18s and 744.74 MB; time made interactive repetition unpleasant, while RAM remained sufficient. This is a practical stopping point, not a measured OOM boundary.
-Measured endpoint growth exponents: exact 0.950 (approximately linear), FM 0.0000 (constant in stream length). See limits.md for all sizes, environment, memory scope, and accuracy ratios.
-A factor of two is acceptable for rough capacity planning or order-of-magnitude visitor counts; it is unacceptable for billing, precise daily-active-user reporting, or detecting a 5% change.
+Bloom 필터는 삽입할 때 비트를 1로 설정하고, 조회할 때 동일한 해시 위치를 확인한다. 비트를 삭제하지 않으므로 삽입한 원소에 대한 누락은 발생하지 않는다. 예측 오탐률은 0.860%, 측정 오탐률은 0.840%였으며, 유한한 조회 표본의 변동으로 작은 차이가 발생했다.
 
-## Task 3
-For p(k)=(1-exp(-kn/m))^k, differentiating log p gives optimum exp(-kn/m)=1/2, hence k=(m/n)ln 2=6.931 and integer k=7. The continuous Bloom optimum at ten bits/item is exp(-10*(ln 2)^2)=0.8193%; this is the Bloom-family optimum, not a universal lower bound for all approximate membership structures.
-Observed FP is 1,770/200,000=0.885%, versus baseline 9.511%: 90.7% fewer mistakes, zero false negatives, strong grade. All owned persistent object headers, packed bytes, and seed occupy 80,000 bits; 78,936 bits hold membership data. Metadata reduces effective m/n to 9.867, giving a k=7 prediction of about 0.8740%. Shared executable code and temporary hash workspace are outside persistent filter state; peak execution memory is not claimed to fit 10 KB. bench.py is unchanged.
-If n is unknown, monitor occupancy and use a scalable Bloom filter with additional layers and a summable error budget, or rebuild from a replayable source. Guessing n too low saturates bits and raises false positives; guessing too high wastes memory and hash work. With a hard fixed budget and an unbounded stream, a constant FP target cannot be maintained indefinitely without dropping history.
+FM은 8개 그룹 안에서 최댓값 R의 평균을 구한 뒤, 그룹 평균들의 중앙값을 사용하고 고정된 근사 보정 계수 1.26으로 나눈다. 그룹 내부의 결합은 2^R의 기하평균에 해당한다. 보정 계수는 입력별 정답에 맞춰 조정하지 않았다. 검증 스트림의 실제 서로 다른 원소 수는 19,953개였다. 2^R의 산술평균은 79,328개(약 3.98배), 중앙값은 16,384개(약 0.82배), 구현한 그룹 결합 추정값은 약 14,808개(약 0.742배)였다. 지수적으로 큰 이상값 때문에 산술평균이 과대 추정됐다. 이 구현은 trailing zero의 최댓값을 사용하는 추정기이며 HyperLogLog는 아니다.
+
+Reservoir sampling의 Algorithm R은 `j = randrange(i + 1)`로 위치를 뽑고 j<k일 때만 표본을 교체한다. 새 원소가 들어올 확률은 k/(i+1)이고, 이전에 남아 있던 각 원소의 생존 확률은 i/(i+1)이다. 이를 귀납적으로 적용하면 스트림 길이 n을 미리 몰라도 각 위치의 최종 포함 확률이 k/n이 되며, 최대 k개의 원소만 저장한다.
+
+## 과제 2 — 정확한 집합과 FM의 메모리 비교
+
+2,500만 개에서 정확한 집합 계산은 43.18초와 744.74MB를 사용했다. 반복적인 대화형 조회에 드는 시간이 부담스러워 이 지점에서 중단했으며, RAM은 충분했다. 실용적인 중단 지점을 기록한 것으로, 메모리 부족 오류가 발생한 한계를 측정한 것은 아니다.
+
+두 끝점으로 계산한 메모리 증가 지수는 정확한 집합 0.950으로 대략 선형이며, FM은 0.0000으로 스트림 길이에 대해 일정했다. 모든 입력 크기, 실행 환경, 메모리 측정 범위와 정확도 비율은 [limits.md](limits.md)에 정리했다.
+
+실제 값의 2배 범위에 드는 추정은 대략적인 용량 계획이나 방문자 규모 파악에는 사용할 수 있다. 과금, 정확한 일간 활성 사용자 수 보고, 5% 수준의 변화 감지에는 충분하지 않다.
+
+## 과제 3 — 같은 메모리에서 오탐률 개선
+
+오탐률 근사식 p(k)=(1−exp(−kn/m))^k의 로그를 k에 대해 미분하면 최적점에서 exp(−kn/m)=1/2이고, k=(m/n)·ln 2가 된다. 원소당 10비트에서는 k≈6.931이므로 정수 해시 수는 7을 선택했다. 연속 최적값의 이론적 오탐률은 exp(−10·(ln 2)^2)≈0.8193%이다. 이는 Bloom 필터 모형의 최적값이며 모든 근사 membership 자료구조의 보편적인 하한이라는 의미는 아니다.
+
+측정 오탐률은 1,770/200,000=0.885%로, 기준 필터의 9.511%보다 오탐이 약 90.7% 감소했다. 누락은 0건이며 채점 기준 strong을 만족했다. 필터가 보유하는 객체 헤더, 압축 비트 배열, seed를 합한 메모리는 80,000비트이고, 실제 membership 비트 배열은 78,936비트이다. 메타데이터 비용으로 유효 m/n은 9.867이 되어 k=7의 예측 오탐률은 약 0.8740%이다. 공용 실행 코드와 일시적인 해시 계산 공간은 필터의 지속적인 보유 상태에 포함하지 않았으며, 실행 중 최대 메모리 전체가 10KB 이내라는 주장은 아니다. bench.py는 수정하지 않았다.
+
+입력 개수 n을 모르면 비트 점유율을 관찰하면서 필터 층을 추가하고 층별 오탐률 예산의 합을 관리하는 확장형 Bloom 필터를 사용할 수 있다. 원본 입력을 재생할 수 있다면 더 큰 필터로 재구성할 수도 있다. n을 너무 작게 예상하면 비트가 포화되어 오탐률이 증가하고, 너무 크게 예상하면 메모리와 해시 계산을 낭비한다. 엄격하게 고정된 메모리로 무한한 스트림을 받으면서 일정한 오탐률을 계속 유지하려면 한계가 있으며, 과거 정보를 버리지 않고 이를 영구히 유지할 수는 없다.
