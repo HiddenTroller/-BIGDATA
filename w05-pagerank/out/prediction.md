@@ -1,0 +1,1 @@
+Before measurement: larger graphs should cost more time per iteration; iteration count depends mainly on beta and graph mixing, not directly on node count. Stricter tolerance should require more iterations.
