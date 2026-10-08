@@ -52,3 +52,8 @@ python3 test_tasks.py --task 2
 - What happens to the iteration count as beta → 1, and the reason
 - A4: which of iteration count and wall time grew with graph size, and why they differ
 - A6: whether the top 10 moved, and what that means for trusting a published ranking
+
+## 과제 수행 결과
+
+β 5개, 그래프 크기 2개, 허용 오차 5개로 총 50회 실험했다. 측정값·CPU·RAM·동시 실행 프로그램·A3–A6 분석은 `out/convergence.md`, 원시 결과는 `out/convergence.json`에 기록했다. β=0.5 대비 상위 10개 순서 변화는 측정한 β 중 0.7에서 처음 나타났다.
+
