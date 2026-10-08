@@ -41,7 +41,27 @@ def pagerank(graph, beta=0.85, iterations=100, tol=1e-10):
     you should call it converged. Return the ranks, and set `pagerank.iterations`
     to how many you actually used, because Task 2 measures that.
     """
-    raise NotImplementedError("implement PageRank")
+    pagerank.iterations = 0
+    n = len(graph)
+    if not n:
+        return {}
+    ranks = {node: 1.0 / n for node in graph}
+    for step in range(1, iterations + 1):
+        # Redistribute dangling rank uniformly; teleportation escapes traps.
+        dangling = sum(ranks[node] for node, outs in graph.items() if not outs)
+        base = (1 - beta) / n + beta * dangling / n
+        updated = {node: base for node in graph}
+        for node, outs in graph.items():
+            if outs:
+                share = beta * ranks[node] / len(outs)
+                for target in outs:
+                    updated[target] += share
+        delta = sum(abs(updated[node] - ranks[node]) for node in graph)
+        ranks = updated
+        pagerank.iterations = step
+        if delta < tol:
+            break
+    return ranks
 
 
 def pagerank_no_teleport(graph, iterations=100):
@@ -50,7 +70,20 @@ def pagerank_no_teleport(graph, iterations=100):
     It exists so you can watch both failures happen rather than take them on
     trust. The harness checks that it really does fail.
     """
-    raise NotImplementedError("implement the broken version")
+    n = len(graph)
+    if not n:
+        return {}
+    ranks = {node: 1.0 / n for node in graph}
+    for _ in range(iterations):
+        updated = {node: 0.0 for node in graph}
+        for node, outs in graph.items():
+            if outs:
+                share = ranks[node] / len(outs)
+                for target in outs:
+                    updated[target] += share
+        # Deliberately discard dead-end rank and omit teleportation.
+        ranks = updated
+    return ranks
 
 
 # ------------------------------------------------------------------- harness
