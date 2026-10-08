@@ -72,3 +72,8 @@ Say in your own words why.
 - R5, in your own words
 - Your worst per-node difference from the dense answer. If it is not zero, say
   where the difference comes from — it is not a bug
+
+## 과제 수행 결과
+
+`YourPageRank`는 입력 인접 리스트와 두 점수 사전을 사용한다. dead end는 균등 재분배하고 순간이동은 공통 스칼라로 더하므로 전이 행렬을 생성하지 않는다. `bench.py`와 `DenseMatrix`는 수정하지 않았다. 기준 구현과 최대 점수 차이는 1.18e-15이며, 약 57.88배 빠르고 float 수는 약 597.01배 적었다. 상세 결과는 `out/bench.txt`, 설명은 `out/observation.md`에 기록했다.
+
