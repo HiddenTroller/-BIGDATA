@@ -14,14 +14,27 @@ with a graph big enough that you can feel the cost.
 Your timings are about your hardware. The iteration counts are not - those are
 about the mathematics, and everybody should get the same ones.
 """
-import argparse, json, os, platform, time
+import argparse, json, os, platform, time, ctypes
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
 
 
 def machine():
-    return {"platform": platform.platform(),
+    if platform.system() != "Windows":
+        return {"platform": platform.platform(), "processor": platform.processor() or platform.machine(),
+                "python": platform.python_version(), "ram_gib": None,
+                "background": "Record RAM and concurrent applications manually on this platform"}
+    import winreg
+    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+    cpu = winreg.QueryValueEx(key, "ProcessorNameString")[0]
+    winreg.CloseKey(key)
+    total = ctypes.c_ulonglong()
+    if not ctypes.windll.kernel32.GetPhysicallyInstalledSystemMemory(ctypes.byref(total)):
+        raise OSError("Cannot read installed RAM")
+    return {"cpu": cpu.strip(), "ram_gib": total.value / 1024**2,
+            "background": "Codex/ChatGPT, Microsoft Edge, Explorer, Windows TiWorker observed; background load is not controlled",
+            "platform": platform.platform(),
             "processor": platform.processor() or platform.machine(),
             "python": platform.python_version()}
 
@@ -45,13 +58,14 @@ def main():
     rows = []
     for beta in [float(x) for x in a.betas.split(",")]:
         t0 = time.perf_counter()
-        ranks = pagerank(graph, beta=beta, iterations=500, tol=a.tol)
+        ranks = pagerank(graph, beta=beta, iterations=10000, tol=a.tol)
         elapsed = time.perf_counter() - t0
         iters = getattr(pagerank, "iterations", None)
         top = sorted(ranks.items(), key=lambda kv: -kv[1])[:10]
         rows.append({"beta": beta, "nodes": len(graph), "tol": a.tol,
                      "iterations": iters, "seconds": elapsed,
-                     "top10": [k for k, _ in top]})
+                     "top10": [k for k, _ in top], "iteration_limit": 10000,
+                     "hit_iteration_limit": iters == 10000})
         print(f"  beta {beta:<5}  {str(iters):>4} iterations  {elapsed:>7.3f}s   "
               f"top: {', '.join(k for k, _ in top[:3])}")
 
@@ -65,3 +79,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
