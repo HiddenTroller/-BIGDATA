@@ -1,9 +1,5 @@
 # Task 2 측정 전 예상
 
-아래 영어 문장은 실험을 실행하기 전에 기록한 예상의 원문이다. 이번 문서 보완에서는 원문을 보존하고 한국어 해설을 추가했다.
-
-> Before measurement: larger graphs should cost more time per iteration; iteration count depends mainly on beta and graph mixing, not directly on node count. Stricter tolerance should require more iterations.
-
 ## 예상의 의미
 
 - **그래프 크기와 시간:** 노드와 링크가 많아지면 한 번 반복할 때 방문할 항목이 늘어나므로 실행 시간이 증가할 것으로 예상했다.
