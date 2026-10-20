@@ -22,7 +22,9 @@ BLOBS = [(0.0, 0.0), (0.2, 0.1), (0.1, 0.2),
 
 def euclidean(a, b):
     """Distance between two points of any dimension."""
-    raise NotImplementedError("distance")
+    if len(a) != len(b):
+        raise ValueError("dimensions must match")
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
 
 
 def assign(points, centroids):
@@ -30,7 +32,10 @@ def assign(points, centroids):
 
     Ties go to the lower index, so that everybody's answer is the same.
     """
-    raise NotImplementedError("assignment step")
+    if not centroids:
+        raise ValueError("at least one centroid is required")
+    return [min(range(len(centroids)), key=lambda i: euclidean(p, centroids[i]))
+            for p in points]
 
 
 def update(points, labels, k):
@@ -39,7 +44,19 @@ def update(points, labels, k):
     An empty cluster has no mean. Decide what you do - and say so, because the
     choice changes the result and there is more than one defensible answer.
     """
-    raise NotImplementedError("update step")
+    if not points or len(points) != len(labels):
+        raise ValueError("nonempty points and matching labels required")
+    groups = [[] for _ in range(k)]
+    for point, label in zip(points, labels):
+        groups[label].append(point)
+    centres = [tuple(sum(values) / len(group) for values in zip(*group))
+               if group else None for group in groups]
+    # Re-seed an empty cluster at the first farthest point from existing means.
+    for i, centre in enumerate(centres):
+        if centre is None:
+            present = [c for c in centres if c is not None]
+            centres[i] = max(points, key=lambda p: min(euclidean(p, c) for c in present))
+    return centres
 
 
 def kmeans(points, k, init="random", seed=246, max_iter=100):
@@ -56,12 +73,45 @@ def kmeans(points, k, init="random", seed=246, max_iter=100):
 
     Set `kmeans.iterations` to how many passes you used.
     """
-    raise NotImplementedError("k-means")
+    if not points or not 1 <= k <= len(points) or max_iter < 1:
+        raise ValueError("require nonempty data, 1 <= k <= n, max_iter >= 1")
+    if any(len(p) != len(points[0]) for p in points):
+        raise ValueError("dimensions must match")
+    rng = random.Random(seed)
+    if init == "random":
+        centres = rng.sample(points, k)
+    elif init == "++":
+        chosen = [rng.randrange(len(points))]
+        while len(chosen) < k:
+            weights = [min(euclidean(p, points[i]) ** 2 for i in chosen) for p in points]
+            total = sum(weights)
+            if total == 0:
+                chosen.append(next(i for i in range(len(points)) if i not in chosen))
+            else:
+                target, cumulative = rng.random() * total, 0.0
+                for i, weight in enumerate(weights):
+                    cumulative += weight
+                    if target < cumulative:
+                        chosen.append(i)
+                        break
+        centres = [points[i] for i in chosen]
+    else:
+        raise ValueError("init must be random or ++")
+    previous = None
+    for iteration in range(1, max_iter + 1):
+        labels = assign(points, centres)
+        centres = update(points, labels, k)
+        kmeans.iterations = iteration
+        if labels == previous:
+            break
+        previous = labels
+    return labels, centres, sse_of(points, labels, centres)
 
 
 def sse_of(points, labels, centroids):
     """Sum of squared distances from each point to its assigned centroid."""
-    raise NotImplementedError("sse")
+    return sum(sum((x - y) ** 2 for x, y in zip(p, centroids[label]))
+               for p, label in zip(points, labels))
 
 
 # ------------------------------------------------------------------- harness
