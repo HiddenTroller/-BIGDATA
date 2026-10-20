@@ -75,8 +75,41 @@ class YourAlgorithm:
         observation.md asks about it
     """
 
-    def __init__(self, support):
-        raise NotImplementedError("write your algorithm")
+    def __init__(self, support, buckets=1_000_003):
+        if support <= 0 or buckets <= 0:
+            raise ValueError("support and buckets must be positive")
+        self.support = support
+        self.buckets = buckets
+        self.peak_counters = 0
+
+    def _bucket(self, a, b):
+        # Mix the integer item IDs deterministically; never use Python's salted hash.
+        return ((a * 0x9E3779B1) ^ (b * 0x85EBCA77)) % self.buckets
 
     def run(self, baskets):
-        raise NotImplementedError
+        from array import array
+        counts = Counter()
+        buckets = array('I', [0]) * self.buckets
+        for basket in baskets:
+            counts.update(basket)
+            for a, b in combinations(sorted(basket), 2):
+                index = self._bucket(a, b)
+                # Saturation preserves the only information the filter needs.
+                if buckets[index] < self.support:
+                    buckets[index] += 1
+        frequent = {item for item, count in counts.items() if count >= self.support}
+        bitmap = bytearray((self.buckets + 7) // 8)
+        for i, count in enumerate(buckets):
+            if count >= self.support:
+                bitmap[i >> 3] |= 1 << (i & 7)
+        del buckets, counts
+        pairs = Counter()
+        self.peak_counters = 0
+        for basket in baskets:
+            for a, b in combinations(sorted(basket & frequent), 2):
+                index = self._bucket(a, b)
+                if bitmap[index >> 3] & (1 << (index & 7)):
+                    pairs[(a, b)] += 1
+            self.peak_counters = max(self.peak_counters, len(pairs))
+        return {frozenset(pair): count for pair, count in pairs.items()
+                if count >= self.support}
