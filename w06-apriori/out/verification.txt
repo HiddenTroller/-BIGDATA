@@ -1,0 +1,2 @@
+100 independent brute-force cases passed: exact counts, collisions, reuse, uneven SON chunks.
+Empty input and asymmetric confidence checks passed.
