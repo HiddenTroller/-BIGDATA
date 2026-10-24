@@ -1,0 +1,193 @@
+{
+  "machine": {
+    "platform": "Local measurement; device details retained in private local record",
+    "privacy_note": "Hardware, operating-system details and available memory omitted from public copy."
+  },
+  "memory_runs": [
+    {
+      "baskets": 200,
+      "baseline": {
+        "seconds": 0.0009200999999166015,
+        "peak_bytes": 58114,
+        "pair_counters": 10,
+        "answer_count": 1
+      },
+      "pcy": {
+        "seconds": 0.4468856999999389,
+        "peak_bytes": 4180261,
+        "pair_counters": 1,
+        "answer_count": 1
+      }
+    },
+    {
+      "baskets": 1000,
+      "baseline": {
+        "seconds": 0.011413800000013907,
+        "peak_bytes": 183532,
+        "pair_counters": 1078,
+        "answer_count": 59
+      },
+      "pcy": {
+        "seconds": 0.5880805000000464,
+        "peak_bytes": 4201586,
+        "pair_counters": 59,
+        "answer_count": 59
+      }
+    },
+    {
+      "baskets": 5000,
+      "baseline": {
+        "seconds": 0.2047712999999476,
+        "peak_bytes": 6427764,
+        "pair_counters": 50168,
+        "answer_count": 823
+      },
+      "pcy": {
+        "seconds": 1.7115982999999915,
+        "peak_bytes": 4233554,
+        "pair_counters": 887,
+        "answer_count": 823
+      }
+    },
+    {
+      "baskets": 20000,
+      "baseline": {
+        "seconds": 2.6188800999999557,
+        "peak_bytes": 102175908,
+        "pair_counters": 820259,
+        "answer_count": 6397
+      },
+      "pcy": {
+        "seconds": 9.066548300000022,
+        "peak_bytes": 4338866,
+        "pair_counters": 13183,
+        "answer_count": 6397
+      }
+    }
+  ],
+  "bucket_runs": [
+    {
+      "buckets": 1009,
+      "seconds": 9.801812400000017,
+      "peak_bytes": 102091792,
+      "pair_counters": 820259,
+      "answer_count": 6397
+    },
+    {
+      "buckets": 100003,
+      "seconds": 9.700288799999953,
+      "peak_bytes": 15332150,
+      "pair_counters": 149311,
+      "answer_count": 6397
+    },
+    {
+      "buckets": 1000003,
+      "seconds": 8.94425160000003,
+      "peak_bytes": 4338866,
+      "pair_counters": 13183,
+      "answer_count": 6397
+    }
+  ],
+  "son_runs": [
+    {
+      "chunks": 3,
+      "candidates": 8817,
+      "pairs": 6397,
+      "missing": 0,
+      "extra": 0,
+      "seconds": 0.9526094999999941
+    },
+    {
+      "chunks": 8,
+      "candidates": 14201,
+      "pairs": 6397,
+      "missing": 0,
+      "extra": 0,
+      "seconds": 0.981427100000019
+    },
+    {
+      "chunks": 16,
+      "candidates": 24418,
+      "pairs": 6397,
+      "missing": 0,
+      "extra": 0,
+      "seconds": 1.043663199999969
+    }
+  ],
+  "spark_available": false,
+  "rules": [
+    [
+      "beer",
+      "diaper",
+      0.8,
+      1.12
+    ],
+    [
+      "bread",
+      "milk",
+      0.8,
+      1.12
+    ],
+    [
+      "diaper",
+      "beer",
+      0.8,
+      1.12
+    ],
+    [
+      "milk",
+      "bread",
+      0.8,
+      1.12
+    ],
+    [
+      "beer",
+      "bread",
+      0.6,
+      0.84
+    ],
+    [
+      "beer",
+      "milk",
+      0.6,
+      0.84
+    ],
+    [
+      "bread",
+      "beer",
+      0.6,
+      0.84
+    ],
+    [
+      "bread",
+      "diaper",
+      0.6,
+      0.84
+    ],
+    [
+      "diaper",
+      "bread",
+      0.6,
+      0.84
+    ],
+    [
+      "diaper",
+      "milk",
+      0.6,
+      0.84
+    ],
+    [
+      "milk",
+      "beer",
+      0.6,
+      0.84
+    ],
+    [
+      "milk",
+      "diaper",
+      0.6,
+      0.84
+    ]
+  ],
+  "benchmark_frequent_items": 1849
+}
