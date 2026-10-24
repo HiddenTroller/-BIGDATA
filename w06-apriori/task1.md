@@ -1,57 +1,35 @@
-# Task 1 · A-Priori, and Why the Second Pass Is the Whole Problem
+# 과제 1 · A-Priori와 연관 규칙
 
-**File** — `task1_apriori.py`
-**Theory** — §6.1 market-basket model, §6.2 A-Priori, §6.1.3 confidence and lift
-**Kind** — implementation · runs anywhere
+### 1. R1–R2: 두 패스의 구현
 
----
+`task1_apriori.py`에서 첫 패스는 바구니별 중복 항목을 제거하고 항목의 지지도를 센다. 문턱 이상인 항목만 남기며, 두 번째 패스에서는 살아남은 항목끼리의 쌍만 센다. 모든 쌍을 센 뒤 필터링하는 방식과 정답은 같을 수 있지만, A-Priori는 빈발하지 않은 항목을 포함하는 쌍의 카운터 생성을 먼저 피한다.
 
-## What you are building
+### 2. R3–R5: 신뢰도와 lift
 
-With n items there are n(n−1)/2 pairs. For a supermarket's 10,000 items that is
-50 million counters before you have read a single basket.
+- confidence(i→j) = support({i,j}) / support({i})
+- lift(i→j) = confidence(i→j) / (support({j}) / 전체 바구니 수)
 
-A-Priori's observation is one sentence: **a pair cannot be frequent unless both
-of its items are frequent.** One extra pass buys a much smaller second pass, and
-the rest of the chapter is consequences of that trade.
+구현은 최소 신뢰도 이상인 규칙을 반환하며 신뢰도 내림차순으로 정렬한다. 같은 신뢰도에서는 항목 순서로 정렬한다.
 
-## Requirements
+주어진 7개 바구니에서 support=3일 때 bread, milk, diaper, beer의 지지도는 각각 5다. cola는 2, egg는 1이므로 두 번째 패스에서 제외된다. diaper→beer는 4/5=0.8이고 lift는 0.8/(5/7)=1.12다. beer가 원래 흔하므로 높은 신뢰도만으로 강한 연관성이나 인과관계를 주장할 수 없다.
 
-| # | Requirement |
-|---|---|
-| R1 | `frequent_singletons` returns `{item: count}` at or above the threshold |
-| R2 | `frequent_pairs` counts **only** pairs whose items both survived pass one |
-| R3 | `association_rules` returns `(antecedent, consequent, confidence, lift)`, sorted by confidence |
-| R4 | Confidence of i → j is `support({i,j}) / support({i})`, and it is **not symmetric** |
-| R5 | Lift is confidence divided by the consequent's own support fraction |
+### 3. 신뢰도가 비대칭인 사례
 
-**R2 is what makes this A-Priori.** Counting every pair and filtering afterwards
-gives the same answer while being exactly the thing A-Priori exists to avoid. It
-will pass this harness. Task 3 measures whether you really did it.
+support=2로 낮추면 cola→milk는 2/2=1.0, milk→cola는 2/5=0.4다. cola 구매자에게 milk를 권하는 방향이 더 강한 조건부 진술이다. 다만 cola 구매 바구니가 2개뿐이므로 일반화에는 한계가 있다.
 
-## Pass condition
+support=3, confidence≥0.75의 최고 신뢰도는 0.8이며 beer→diaper 등을 포함한다. 해당 lift는 1.12로 개선 폭은 작다.
 
-```bash
-python3 task1_apriori.py --verify
-```
+### 4. 가능한 쌍과 실제 카운터
 
-Five checks against baskets small enough to count by hand — including that
-`cola` and `egg`, which appear twice and once, never reach pass two.
+| 구분 | 개수 |
+|---|---:|
+| 항목 2,000개의 모든 가능한 쌍 | 1,999,000 |
+| support=50에서 빈발 항목 | 1,849 |
+| 빈발 항목 사이의 가능한 쌍 | 1,708,476 |
+| 실제 바구니에 나타나 생성된 쌍 카운터 | 820,259 |
 
-## Why R5 is in here
+가능한 쌍의 수와 실제 딕셔너리에 저장한 카운터 수는 다르다.
 
-`diaper → beer` has confidence 0.8, which sounds strong. Beer is in 5 of 7
-baskets anyway, so its baseline is 0.71. The lift is 1.12 — the rule barely
-tells you anything you did not already know from beer being popular.
+### 5. 검증
 
-A rule with high confidence and lift near 1 is a rule about a common item, not a
-relationship. §6.1.3 is about that, and it is the most practically important
-paragraph in the chapter.
-
-## What to write in `observation.md`
-
-- Confidence is not symmetric. Give the two confidences for one of your pairs
-  and say which direction is the useful claim
-- The highest-confidence rule you found, its lift, and whether you believe it
-- With 2,000 items, how many pair counters would brute force need? How many does
-  A-Priori need after pass one on this data? Give both numbers
+`python task1_apriori.py --verify`의 5개 검사가 모두 통과한 기록이 있다. 추가 검증에서는 빈 입력과 비대칭 신뢰도도 확인했다. 추가 독립 사례 100개에서는 정확한 지지도, 해시 충돌, 객체 재사용, 크기가 다른 SON 청크의 정답 일치를 확인했다.
