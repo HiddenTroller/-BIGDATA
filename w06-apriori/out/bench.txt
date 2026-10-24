@@ -1,0 +1,4 @@
+  baseline     pairs  6397   peak counters    820,259     0.66s   -
+  yours        pairs  6397   peak counters     13,183     1.19s   missing 0, extra 0
+
+Peak counter reduction: 98.392825%
