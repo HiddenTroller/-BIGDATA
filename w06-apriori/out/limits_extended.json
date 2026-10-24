@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-24",
+  "python": "3.12.14",
+  "machine": {
+    "cpu": "AMD Ryzen 7 9800X3D",
+    "ram_gib": 32
+  },
+  "limits": {
+    "algorithm_seconds": 30,
+    "python_peak_bytes": 1073741824
+  },
+  "measurement": "Input excluded from tracemalloc; first and second passes included. Limits checked each 100 baskets. A stopped run has partial counters, not final frequent-pair answers. No physical OOM is attempted. Peaks cover counting only, not materialising the final returned frozenset dictionary; do not compare directly to original full-output peaks.",
+  "runs": [
+    {
+      "baskets": 20000,
+      "items": 2000,
+      "support": 1,
+      "generation_seconds": 0.10018879999984165,
+      "algorithm_seconds": 3.7338382999998885,
+      "second_pass_processed": 20000,
+      "pair_counters": 893456,
+      "peak_bytes": 102235431,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 893456
+    },
+    {
+      "baskets": 40000,
+      "items": 4000,
+      "support": 1,
+      "generation_seconds": 0.22662930000001325,
+      "algorithm_seconds": 8.640983300000016,
+      "second_pass_processed": 40000,
+      "pair_counters": 2322007,
+      "peak_bytes": 214245356,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 2322007
+    },
+    {
+      "baskets": 80000,
+      "items": 8000,
+      "support": 1,
+      "generation_seconds": 0.4408920000000762,
+      "algorithm_seconds": 19.650086699999974,
+      "second_pass_processed": 80000,
+      "pair_counters": 5691643,
+      "peak_bytes": 817396788,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 5691643
+    },
+    {
+      "baskets": 160000,
+      "items": 16000,
+      "support": 1,
+      "generation_seconds": 0.9799600999999711,
+      "algorithm_seconds": 30.018419399999857,
+      "second_pass_processed": 111800,
+      "pair_counters": 10194773,
+      "peak_bytes": 907686420,
+      "completed": false,
+      "stop_reason": "algorithm_time_budget"
+    }
+  ],
+  "timing_note": "Input size experiments overlapped with clustering ablations; times describe observed practical limits, not isolated performance."
+}

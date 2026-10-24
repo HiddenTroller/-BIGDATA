@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-24",
+  "machine": {
+    "cpu": "AMD Ryzen 7 9800X3D",
+    "ram_gib": 32
+  },
+  "baskets": 160000,
+  "items": 16000,
+  "seed": 246,
+  "time_budget_seconds": 30,
+  "peak_budget_bytes": 1073741824,
+  "scope": "First/second pass counting only; excludes prebuilt input and final frozenset result materialisation. Checked every 100 baskets; partial counts are not answers.",
+  "runs": [
+    {
+      "support": 1600,
+      "frequent_items": 200,
+      "processed": 160000,
+      "pair_counters": 19900,
+      "seconds": 3.7889021999999386,
+      "peak_bytes": 2438487,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 189
+    },
+    {
+      "support": 800,
+      "frequent_items": 436,
+      "processed": 160000,
+      "pair_counters": 94763,
+      "seconds": 4.396092299999964,
+      "peak_bytes": 13338324,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 584
+    },
+    {
+      "support": 400,
+      "frequent_items": 1043,
+      "processed": 160000,
+      "pair_counters": 505215,
+      "seconds": 6.8348914000000605,
+      "peak_bytes": 51613748,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 1654
+    },
+    {
+      "support": 200,
+      "frequent_items": 2465,
+      "processed": 160000,
+      "pair_counters": 1941259,
+      "seconds": 11.246106100000134,
+      "peak_bytes": 204826436,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 4535
+    },
+    {
+      "support": 100,
+      "frequent_items": 5920,
+      "processed": 160000,
+      "pair_counters": 5467873,
+      "seconds": 19.664972999999918,
+      "peak_bytes": 475137260,
+      "completed": true,
+      "stop_reason": "completed",
+      "frequent_pairs": 12355
+    },
+    {
+      "support": 50,
+      "frequent_items": 13890,
+      "processed": 145200,
+      "pair_counters": 11189164,
+      "seconds": 29.67507230000001,
+      "peak_bytes": 1634131292,
+      "completed": false,
+      "stop_reason": "python_peak_budget"
+    }
+  ]
+}
