@@ -81,7 +81,60 @@ class YourKMeans:
     """
 
     def __init__(self, k, max_iter=50):
-        raise NotImplementedError("write your k-means")
+        if k < 1 or max_iter < 1:
+            raise ValueError("k and max_iter must be positive")
+        self.k, self.max_iter = k, max_iter
 
     def run(self, points, initial_centroids, distance):
-        raise NotImplementedError
+        import math
+        if len(initial_centroids) != self.k:
+            raise ValueError("need k initial centroids")
+        centroids = list(initial_centroids)
+        labels = [None] * len(points)
+        upper = [math.inf] * len(points)
+        lower = [0.0] * len(points)
+        self.bound_skips = 0
+        self.first_iteration_calls = 0
+        for self.iterations in range(1, self.max_iter + 1):
+            separation = [math.inf] * self.k
+            if self.iterations > 1:
+                for a in range(self.k):
+                    for b in range(a + 1, self.k):
+                        half = distance(centroids[a], centroids[b]) / 2
+                        separation[a] = min(separation[a], half)
+                        separation[b] = min(separation[b], half)
+            changed = False
+            for i, point in enumerate(points):
+                old = labels[i]
+                if old is not None:
+                    threshold = max(lower[i], separation[old])
+                    # Strict margin preserves the baseline's 1e-12 tie rule.
+                    if upper[i] + 1e-10 < threshold:
+                        self.bound_skips += 1
+                        continue
+                    upper[i] = distance(point, centroids[old])
+                    if upper[i] + 1e-10 < threshold:
+                        self.bound_skips += 1
+                        continue
+                ds = [distance(point, centre) for centre in centroids]
+                best, label = ds[0], 0
+                for j in range(1, self.k):
+                    if ds[j] < best - 1e-12:
+                        best, label = ds[j], j
+                lower[i] = min((d for j, d in enumerate(ds) if j != label), default=math.inf)
+                upper[i] = best
+                labels[i] = label
+                changed |= label != old
+            if self.iterations == 1:
+                self.first_iteration_calls = len(points) * self.k
+            new_centroids = _means(points, labels, self.k, centroids)
+            if not changed:
+                centroids = new_centroids
+                break
+            movement = [distance(a, b) for a, b in zip(centroids, new_centroids)]
+            largest = max(movement)
+            for i, label in enumerate(labels):
+                upper[i] += movement[label]
+                lower[i] = max(0.0, lower[i] - largest)
+            centroids = new_centroids
+        return labels, centroids
