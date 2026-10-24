@@ -1,56 +1,31 @@
-# Task 2 · Lower the Threshold Until Your Machine Says No
+# 과제 2 · 지지도 문턱과 카운터 증가
 
-**File** — `task2_explosion.py`
-**Theory** — §6.1, §6.2
-**Kind** — **measurement. Where it breaks is a fact about your laptop.**
+## 1. A1·A3: 측정 조건과 결과
 
----
+`task2_explosion.py`로 고정 seed=246, 20,000개 바구니, 2,000개 항목을 사용했다. support는 400, 200, 100, 50, 25, 12, 6, 3, 1의 9개 설정이며 400배 범위다. 최소 5개 설정·16배 범위 조건을 충족한다.
 
-## Why this task exists
+카운터·정답·시간·메모리 표와 두 개수의 그래프는 [상세 측정 보고서](out/explosion.md), 원시 결과는 [explosion.json](out/explosion.json)에 있다.
 
-Support is a knob. Turning it down is how you find the interesting rules, and it
-is also how you run out of memory. The two are the same action, and this task is
-about feeling where the boundary is on the machine in front of you.
+## 2. A2: 어디까지 측정했는가
 
-## What to do
+support=1까지 완료했고 마지막 실행은 4.154초, Python 할당 peak 327.024 MB였다. RAM 부족이나 견디기 어려운 지연은 발생하지 않았다. support=1에서는 관측된 모든 쌍이 정답이므로 더 낮춰도 새로운 양의 지지도 쌍이 생기지 않는다. 이번 실험은 고정 데이터의 끝까지 측정한 것이며 실제 기기의 메모리 한계를 찾았다는 뜻은 아니다.
 
-```bash
-python3 task2_explosion.py --supports 400,200,100,50,25
-python3 task2_explosion.py --supports 12,6
-python3 task2_explosion.py --supports 3        # be ready to stop it
-```
+메모리는 tracemalloc이 기록한 Python 할당 peak다. 미리 생성한 입력 바구니와 프로세스 전체 RAM은 포함하지 않는다.
 
-| # | Requirement |
-|---|---|
-| A1 | At least **five** support values, spanning a 16× range |
-| A2 | Keep halving until it is genuinely unpleasant. **Record that support and what ran out** |
-| A3 | Tabulate peak counters against support → `out/explosion.md` |
-| A4 | Counters do not grow linearly as support falls. Give the growth you actually measured — is it roughly doubling per halving, or worse? |
-| A5 | Frequent pairs found against support: plot it too. **It grows differently from the counters** — say how, and why that gap is the whole problem |
-| A6 | Your machine: CPU, RAM, what else was running |
+## 3. A4: 문턱을 낮출 때 카운터의 증가
 
-A5 is the point. The number of *answers* grows slowly; the number of *counters
-you need to find them* grows fast. Everything in §6.3 is about that gap.
+400→200→100→50에서 카운터는 10,585→58,626→273,701→820,259개였다. 각각 약 5.54배, 4.67배, 3.00배로 증가했다. 초반에는 단순한 두 배 증가보다 가파르지만 support=25부터 893,456개에 포화했다. 계속 지수적으로 증가한다고 결론 내릴 수 없다.
 
-## A warning
+## 4. A5: 정답과 카운터가 다른 이유
 
-At low supports this will get slow and memory-hungry before it errors. Watch
-your memory, and stop it rather than freezing your laptop. **Stopping early and
-recording where is the correct outcome** — "I stopped at support 3 because the
-process reached 6 GB" is a complete answer.
+support=50에서 정답은 6,397개지만 이를 찾기 위해 820,259개 카운터를 유지했다. 정답 하나당 약 128.2개다. 살아남은 항목의 쌍이라도 최종 문턱을 넘지 못하는 경우가 많기 때문이다. 이 중간 후보의 비용을 줄이는 것이 PCY의 목적이다.
 
-## Pass condition
+support=1에서는 관측된 모든 쌍이 정답이 되어 정답과 카운터가 모두 893,456개다. 따라서 두 개수의 간격은 문턱에 따라 달라진다.
 
-`out/explosion.json` has five or more supports with your machine recorded, and
-`out/explosion.md` answers A2–A6.
+## 5. A6: 실행 환경 기록의 한계
 
-```bash
-python3 test_tasks.py --task 2
-```
+공개 보고서는 CPU·RAM 등 상세 실행 환경을 생략하고 로컬 원본에 보관했다고 명시한다. 측정 당시 별도로 실행 중이던 프로그램은 없었다. CPU·RAM의 상세 사양은 현재 공개 파일만으로 확인할 수 없어 제출본에 확인된 정보를 보완해야 한다.
 
-## What to write in `observation.md`
+## 6. 검증
 
-- The support where it became unbearable, and what ran out first
-- A4: your measured growth rate for counters
-- A5: how differently the answer count grew, and what that gap means for anyone
-  who wants "just a slightly lower threshold"
+[저장된 검사 결과](out/tests.txt)에서 측정 설정 수·범위와 보고서 존재 검사가 통과했다. 자동 검사 통과가 보고서의 모든 서술형 요구사항 충족을 보장하지는 않는다.

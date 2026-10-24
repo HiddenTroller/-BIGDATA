@@ -1,92 +1,48 @@
-# Task 3 · Make Pass Two Fit
+# 과제 3 · PCY로 두 번째 패스의 메모리 줄이기
 
-**Files** — `task3_pcy.py` · harness `bench.py` (**do not edit the harness**)
-**Theory** — §6.3 PCY
-**Kind** — improvement · runs anywhere
+## 1. R1: 구현과 처리 과정
 
----
+`task3_pcy.py`의 `YourAlgorithm(support)`는 `run(baskets)`에서 빈발 쌍과 정확한 지지도를 반환하고 `.peak_counters`에 동시에 보유한 최대 쌍 카운터 수를 기록한다.
 
-## What you are given
+첫 패스에서 항목 지지도와 모든 관측 쌍의 해시 버킷을 센다. 버킷은 support에서 포화시킨다. 첫 패스 후 빈발 버킷을 packed bitmap으로 바꾸고 정수 버킷 배열을 해제한다. 두 번째 패스는 두 항목이 모두 빈발하고 해당 버킷 비트가 켜진 쌍만 센다.
 
-`PlainApriori` does what Task 1 asked: drop infrequent items in pass one, then
-count every pair of survivors. Much better than counting all pairs — and still
-not enough, because the survivors are the *common* items and common items appear
-together constantly.
+빈발 쌍은 반드시 빈발 버킷에 들어가지만, 빈발 버킷의 모든 쌍이 빈발한 것은 아니다. 해시 충돌로 통과한 후보는 정확한 지지도 검사에서 제거한다.
 
-```bash
-python3 bench.py
-python3 bench.py --yours
-```
+## 2. R2–R4: 동일한 정답과 개선
 
-```
-  20,000 baskets  ·  2,000 items  ·  support 50
-```
+`bench.py`는 수정하지 않았다. 저장된 검사 결과는 다음과 같다.
 
-**Where the baseline lands:**
+| 지표 | A-Priori | PCY |
+|---|---:|---:|
+| 빈발 쌍 | 6,397 | 6,397 |
+| 최대 쌍 카운터 | 820,259 | 13,183 |
+| 검사 실행 시간 | 0.64초 | 1.08초 |
 
-```
-  baseline     pairs  6397   peak counters    820,259     0.57s
-```
+누락·추가 쌍은 모두 0개이고 쌍 카운터는 약 98.39% 감소했다. 이는 카운터 기준 strong 조건인 70% 감소를 넘는다. 시간은 해당 검사 실행의 단일 측정이며 채점 지표는 실행 시간이 아니라 최대 쌍 카운터 수다.
 
-820,000 counters to find 6,397 answers.
+## 3. R5: 버킷의 실제 비용과 교차점
 
-## How you are scored
+버킷 수는 1,000,003개다. 충돌을 줄이면서 고정 배열 비용을 감당하기 위한 선택이며 모든 데이터에서 최적이라는 뜻은 아니다. array('I')의 본체는 4,000,012바이트, packed bitmap은 125,001바이트다. 압축 중 두 배열이 공존하는 순간의 비용도 별도 할당 peak 측정에 포함했다.
 
-**Peak pair counters held at once.** Not time — that is the thing that decides
-whether the algorithm runs at all, and it is what §6.3 is about.
+| 바구니 수 | A-Priori peak(MB) | PCY peak(MB) |
+|---|---:|---:|
+| 200 | 0.058 | 4.180 |
+| 1,000 | 0.184 | 4.202 |
+| 5,000 | 6.428 | 4.234 |
+| 20,000 | 102.176 | 4.339 |
 
-## Requirements
+이 prefix 데이터와 support=50에서는 교차점이 1,000개와 5,000개 사이에 있다. 정확한 위치는 측정하지 않았다. 항목 빈도·쌍 밀도·support·버킷 수·충돌·객체 크기에 따라 달라진다. 카운터 감소율을 전체 RAM 감소율로 바꾸어 주장하지 않는다. 이 메모리 지표는 입력을 제외한 Python 할당 peak다.
 
-| # | Requirement |
-|---|---|
-| R1 | `YourAlgorithm(support)` with `run(baskets)` and `.peak_counters` |
-| R2 | `bench.py` unmodified |
-| R3 | **Exactly the same frequent pairs** as the baseline. Not a subset |
-| R4 | Fewer peak counters |
-| R5 | In `observation.md`: your bucket array was itself memory. Account for it honestly, and say at what data size PCY starts actually winning |
+## 4. 버킷 수를 줄인 실험
 
-## Grading
+| 버킷 수 | 최대 쌍 카운터 | 할당 peak(MB) |
+|---|---:|---:|
+| 1,009 | 820,259 | 102.092 |
+| 100,003 | 149,311 | 15.332 |
+| 1,000,003 | 13,183 | 4.339 |
 
-| | Requirement |
-|---|---|
-| pass | R1–R4, more than 5% cut |
-| good | ≥ **40%** cut |
-| **strong** | ≥ **70%** cut |
+모두 정답은 6,397개였다. 버킷이 너무 적으면 충돌 때문에 거의 모든 비트가 켜져 필터가 효과를 잃는다. 버킷 배열만 줄인다고 총 메모리가 줄어드는 것은 아니다.
 
-A straightforward PCY gets about 99%. If you are far from that, check whether
-your bitmap is doing any work — a filter that passes everything is not a filter.
+## 5. 검증
 
-## The idea
-
-Pass one only needs one integer per item, and there are not many items. The rest
-of your memory sits idle. §6.3 spends it: hash every pair you see **during pass
-one** into a fixed array of buckets, and count buckets instead of pairs.
-
-A bucket whose total is below the support threshold **cannot** contain a frequent
-pair. In pass two you skip every pair landing in such a bucket — and the bucket
-array collapses to one bit each before you need the memory for counters.
-
-Two things to be careful of:
-
-- a frequent bucket does **not** mean its pairs are frequent. It is a filter,
-  not an answer
-- `peak_counters` is on your honour. Count what you hold at the same time
-
-## R5 · the honest accounting
-
-Your bucket array holds a million-odd integers during pass one. The baseline's
-peak was 820,000 counters. On *this* data, did you actually save memory, or did
-you move it?
-
-Then answer the real question: **at what data size does PCY start winning?** The
-bucket array is a fixed cost and the counter count is not, so there is a
-crossover. Say roughly where it is and what it depends on.
-
-This is the most interesting question in the week and it is why R5 is a
-requirement rather than a bonus.
-
-## What to write in `observation.md`
-
-- Your bucket count, and why you chose that number
-- R5: the honest memory accounting, and where the crossover is
-- What happened when you made the bucket array much smaller. Try it
+[검사 기록](out/tests.txt)과 [추가 검증](out/verification.txt)에 정답 일치·충돌·재사용 등을 확인한 기록이 있다. 메모리 설명 항목은 사람 평가 대상이다.

@@ -1,67 +1,39 @@
-# Task 2 · Watch Distance Stop Meaning Anything
+# 과제 2 · 차원의 저주 측정
 
-**File** — `task2_curse.py`
-**Theory** — §7.1.3 the curse of dimensionality
-**Kind** — **measurement. The dimension where it bites depends on your data size.**
+## 1. A1–A2: 조건과 결과 위치
 
----
+seed=246의 균등 단위 정육면체 점을 사용했다. n=1,000에서 차원 2, 5, 10, 20, 50, 100, 200, 500, 1,000의 9개 설정을 측정했다. 6개 이상 차원과 200 이상 차원 조건을 충족한다.
 
-## Why this task exists
+각 설정에서 인덱스 쌍을 약 20,000번 추출하고 동일 점 쌍을 제외했다. 중복된 쌍은 있을 수 있다. 여기서 min·max는 표본 극단값이며 전체 쌍의 전역 최솟값·최댓값이 아니다.
 
-In two dimensions "nearest" is obvious. In two hundred, every point is roughly
-the same distance from every other point, and everything built on "nearest" —
-k-means, k-NN, LSH from week 3 — has nothing left to stand on.
+contrast = (max−min)/min이며 전체 표·그래프는 [curse.md](out/curse.md), 원시 결과는 [curse.json](out/curse.json)에 있다.
 
-That is usually stated as a fact to accept. Measure it instead.
+## 2. A3: contrast의 전환
 
-## What to do
+n=1,000의 측정 격자에서 contrast가 1 미만이 된 첫 차원은 50(0.9824), 0.5 미만은 200(0.3718)이었다. 직전 측정은 각각 20과 100이므로 정확한 전환점이라고 주장하지 않는다. d=1,000에서는 0.1596까지 감소했다.
 
-```bash
-python3 task2_curse.py --dims 2,5,10,20,50,100,200
-python3 task2_curse.py --dims 500,1000 --points 2000
-```
+## 3. A4: 평균 거리는 어떻게 커지는가
 
-Each run samples 20,000 random pairs of uniform points and reports the minimum,
-maximum, mean and spread of the distances between them.
+d=100의 평균 4.0681에서 d=1,000의 12.9035로 약 3.1719배 증가했다. 이는 sqrt(10)≈3.1623에 가깝다. 독립인 U(0,1) 좌표 차의 제곱 기댓값은 1/6이므로 거리 제곱의 평균은 d/6이다. 고차원에서 거리가 집중되면 평균 거리는 sqrt(d/6)에 가까워진다. 유한 차원에서 평균 거리와 sqrt(d/6)가 정확히 같다는 뜻은 아니다.
 
-| # | Requirement |
-|---|---|
-| A1 | At least **six** dimensions, from single digits to 200 or more |
-| A2 | Tabulate **contrast** = (max − min) / min against dimension → `out/curse.md` |
-| A3 | Describe what happens to contrast. At roughly what dimension does it drop below 1? Below 0.5? |
-| A4 | The **mean** distance grows with dimension. Say roughly how — is it linear in d, or something else? Check against your numbers |
-| A5 | Relative standard deviation (spread ÷ mean) also falls. Report it, and say which of A3 and A5 better captures "distance stopped meaning anything" |
-| A6 | Vary the **point count** at one fixed dimension. Does contrast depend on n as well as d? |
-| A7 | Your machine, and how long the largest run took |
+## 4. A5: 상대 표준편차
 
-A4 has an answer you can predict before measuring: for uniform points in the
-unit cube, mean distance grows like the square root of d. Check whether your
-numbers agree, and if they do not, work out why before writing it down.
+표준편차/평균은 d=2의 0.4759에서 d=1,000의 0.0186으로 감소했다. 상대 표준편차는 전형적인 거리의 집중을 비교할 때 안정적이고, contrast는 표본에서 가까운 쌍과 먼 쌍이 얼마나 구별되는지 직접 보여 준다. 두 지표는 서로 다른 질문에 답하며 하나로 모든 거리 기반 방법의 실패를 단정할 수 없다.
 
-A6 is the question most people never ask. Contrast is about the gap between the
-nearest and furthest of **n** points, so n is in the answer too.
+## 5. A6: 점 개수도 영향을 주는가
 
-## Connect it back
+d=50에서 n=200, 1,000, 4,000의 표본 contrast는 0.9374, 0.9824, 0.9965였다. 표본 쌍 수를 고정했으므로 이를 n에 따른 전체 쌍의 극단값 변화와 혼동하지 않는다.
 
-| # | Requirement |
-|---|---|
-| A8 | Week 3 was LSH on Jaccard similarity. Does this result threaten it? Say why or why not |
+같은 난수열의 prefix를 사용한 추가 전수 비교에서는 n=50, 200, 600의 contrast가 0.8411, 0.9004, 1.2090이었다. 점을 더 포함하면 더 가까운 쌍·먼 쌍을 발견할 수 있으므로 contrast는 d뿐 아니라 n과 표본 추출 방식에도 의존한다.
 
-A8 is worth thinking about properly. Jaccard is not Euclidean, and shingle sets
-are not uniform points in a cube. Deciding whether the curse applies is more
-useful than assuming it does.
+## 6. A7: 실행 시간과 기기 정보
 
-## Pass condition
+가장 큰 차원 d=1,000, n=1,000의 실행은 1.4080초였고, 전수 비교 n=600은 0.6309초였다. 시간은 해당 실행의 단일 측정이다. 공개본에서는 상세 하드웨어 정보를 생략했다고 명시한다. 측정 당시 별도로 실행 중이던 프로그램은 없었다. CPU·RAM의 상세 사양은 현재 공개 파일만으로 확인할 수 없어 제출본에서 확인된 정보를 보완해야 한다.
 
-`out/curse.json` has six or more dimensions with your machine recorded, and
-`out/curse.md` answers A3–A8.
+## 7. A8: 3주차 LSH와 연결
 
-```bash
-python3 test_tasks.py --task 2
-```
+이번 관찰은 균등한 고차원 유클리드 점에 대한 것이다. 문서 shingle 집합의 Jaccard 유사도와 minhash를 사용한 3주차 LSH와는 데이터·척도가 다르다. 따라서 이 결과만으로 문서 LSH가 실패한다고 할 수 없다. 실제 Jaccard 유사도 자체가 집중되어 있다면 후보 분리가 어려울 수 있으므로 실제 유사도 분포를 먼저 확인해야 한다.
 
-## What to write in `observation.md`
+## 8. 검증
 
-- The dimension where contrast dropped below 1, at your data size
-- A6: whether n mattered, and what that means
-- A8: your answer about LSH, with the reason
+[저장된 검사 결과](out/tests.txt)에서 차원 수·점 개수 변경·기록 형식 검사가 통과했다. 서술형 해석 전체를 자동 검사한 것은 아니다.

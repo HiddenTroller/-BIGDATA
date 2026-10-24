@@ -1,81 +1,29 @@
-# Task 4 · SON — A-Priori That Survives Being Split Up — **optional**
+# 선택 과제 4 · SON
 
-**File** — `task4_son.py`
-**Theory** — §6.4.3 the SON algorithm, §6.4.4 SON and MapReduce
-**Status** — **optional.** Not part of the assignment, not graded. Effort is noted.
+이 과제는 선택·비채점 항목이다. 단일 프로세스 구현과 검증은 완료했으며 Spark 실행은 진행하지 않았다.
 
----
+## 1. A1–A2: 청크별 후보와 전역 검증
 
-## Why this one is worth doing
+`task4_son.py`의 첫 패스는 청크 크기가 m, 전체 바구니 수가 N, 전역 지지도가 s일 때 청크별 문턱 s×m/N을 사용한다. 적어도 한 청크에서 문턱을 넘는 쌍의 합집합을 후보로 만든다. 크기가 다른 청크에도 각자의 크기로 문턱을 조정한다.
 
-Tasks 1 and 3 assume the baskets fit on one machine. SON does not, and it is the
-**textbook's own** answer — §6.4.3 and §6.4.4, algorithm included.
+두 번째 패스는 전체 바구니에서 후보의 실제 지지도를 세어 s 이상인 쌍만 남긴다. 각 바구니의 쌍을 열거한 뒤 후보 set에 있는지 확인하여 후보×바구니의 전수 부분집합 검사를 피했다.
 
-It also has a guarantee that most sampling schemes do not:
+## 2. A3·A6: 거짓 음성이 없는 이유
 
-> an itemset that is frequent overall is frequent in **at least one chunk**
+전역 빈발 쌍이 모든 청크에서 문턱 미만이라고 가정한다. 청크별 지지도를 합하면 s×(청크 크기의 합)/N=s 미만이어야 한다. 전역 지지도가 s 이상이라는 가정과 모순이므로 적어도 한 청크에서는 후보가 된다. 두 번째 패스는 실제 전역 지지도를 세므로 참인 빈발 쌍을 제거하지 않는다.
 
-which is why pass one can look at chunks independently, in parallel, with no
-communication between them, and still miss nothing. Proving that to yourself is
-worth more than the code.
+## 3. A4–A5: 청크 수 변경 결과
 
-## Requirements
+| 청크 수 | 후보 수 | 최종 쌍 | 누락/추가 | 시간(초) |
+|---|---:|---:|---|---:|
+| 3 | 8,817 | 6,397 | 0 / 0 | 0.953 |
+| 8 | 14,201 | 6,397 | 0 / 0 | 0.981 |
+| 16 | 24,418 | 6,397 | 0 / 0 | 1.044 |
 
-| # | Requirement |
-|---|---|
-| A1 | `son_pass_one` returns every pair frequent **in at least one chunk**, using the **scaled** threshold from §6.4.3 |
-| A2 | `son_pass_two` counts only those candidates over all baskets and keeps the real ones |
-| A3 | **Zero false negatives** against task 3's answer. Not "almost zero" |
-| A4 | Report the candidate count. It is much larger than the answer — say why that is acceptable |
-| A5 | Change `--chunks` and report what moves. **One number changes and one does not** |
-| A6 | In `observation.md`: prove A3 to yourself. Why can a globally frequent pair not be missed by every chunk? |
+청크를 바꾸면 지역 빈발성에 따라 후보 수가 달라지지만 전역 정답은 유지된다. 후보가 정답보다 많은 것은 허용된다. 지역에서만 빈발한 쌍은 두 번째 패스가 제거한다.
 
-**A1 is where it goes wrong.** A chunk holding a tenth of the baskets needs a
-tenth of the threshold. Use the full threshold on a chunk and you lose the
-guarantee immediately — quietly, on real data, with no error message.
+## 4. SON을 사용하는 이유와 실행 한계
 
-**A6 is the point of the task.** The argument is short and it is a proof by
-contradiction. If you can write it in three lines, you understand SON.
+한 기기에 들어가는 데이터에서는 청크 처리와 후보 합집합의 추가 비용 때문에 기본 A-Priori가 더 유리할 수 있다. SON은 청크를 독립적으로 처리하고 전역 검증하는 두 패스 구조로 분산 처리를 가능하게 한다.
 
-## Measured numbers
-
-```
-  task 3 baseline      0.57s   pairs  6,397
-  your SON            12.19s   pairs  6,397   candidates  14,201   missing 0, extra 0
-  spark SON            5.85s   pairs  6,397   candidates  14,695   missing 0
-```
-
-Three things in that table are worth stopping on.
-
-**SON is 21× slower than task 3.** On one machine, with baskets that fit, SON is
-a bad choice — and it is still the right algorithm, because task 3 does not exist
-at all when the baskets do not fit.
-
-**Spark made SON about twice as fast**, not 21× — it parallelised pass two across
-your cores. So Spark did help, and it helped the *algorithm you gave it*.
-Distributing a worse algorithm is not progress, and that sentence is most of what
-people get wrong about this.
-
-**The candidate counts differ (14,201 vs 14,695) and the answers do not.** The
-chunking is different, so what is "frequent somewhere" is different — and pass two
-removes the difference. That is A5, and it is the guarantee working in front of you.
-
-## Pass two is slower than it needs to be
-
-The obvious pass two checks every candidate against every basket. On this data
-that is 20,000 × 14,000 subset tests, which is where your 12 seconds went.
-
-There is a much better way and it uses something you already built in task 1.
-Not a requirement — but if you find it, put the number in `observation.md`.
-
-## If Spark will not start
-
-The script catches it. Everything except the last row runs without Spark, and
-A1 – A6 are all answerable single-process. Record what stopped you.
-
-## What to write in `observation.md`
-
-- A6: the three-line argument for no false negatives
-- A5: which number moved when you changed `--chunks`, and which did not
-- Why is SON the right algorithm even though it is 21× slower here?
-- If you sped up pass two: what you did and the new number
+원래 안내문의 SON 12.19초와 Spark 5.85초는 이번 실행 결과가 아니다. 이번 단일 프로세스 SON의 시간은 위 표와 같으며, 이를 이용해 Spark 가속 효과를 주장할 수 없다. PySpark가 설치되지 않아 Spark 실행을 시도하지 않았다고 [실행 기록](out/task4.txt)에 남겼다. A1–A6은 단일 프로세스 결과로 답했다.
