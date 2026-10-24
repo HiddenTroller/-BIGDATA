@@ -10,6 +10,8 @@ support=3, confidence≥0.75의 최고 규칙은 beer→diaper 등 신뢰도 0.8
 
 ## Task 2: 측정의 한계
 
+CPU는 AMD Ryzen 7 9800X3D 8-Core Processor, 설치 RAM은 32GB다. 기존 측정도 같은 컴퓨터에서 수행했음을 확인했다. 측정 당시 별도로 실행 중이던 프로그램은 없었다.
+
 support=1까지 측정했으며 327.0 MB, 4.15초로 완료되어 실제 RAM 부족은 일어나지 않았다. 데이터의 끝에 도달한 것이며 기기의 한계에 도달한 것이 아니다. 카운터는 초반 문턱 반감마다 5.54→4.67→3.00배 늘다가 893,456개에 포화했다. 정답 수도 결국 같은 수에 도달한다. 세부 표와 그래프 및 계측 범위는 [explosion.md](explosion.md)에 기록했다.
 
 ## Task 3: PCY의 이득과 비용
@@ -50,3 +52,6 @@ support=1까지 측정했으며 327.0 MB, 4.15초로 완료되어 실제 RAM 부
 ## 재현
 
 python task1_apriori.py --verify, python task2_explosion.py --supports 400,200,100,50,25,12,6,3,1, python measure_extra.py, python verify_extra.py, python test_tasks.py. 실행 기록은 out/bench.txt, out/tests.txt, out/verification.txt에 있다.
+
+
+고정 입력에서 support=1까지 도달했으므로 이 실험에서 더 낮출 유효 문턱은 없다. 따라서 기록할 실제 자원 고갈 지점은 없으며, 종료 조건은 메모리 부족이 아니라 모든 관측 쌍이 정답이 되는 문턱의 하한이다. 기기의 실제 한계는 바구니 수·항목 수를 늘린 별도 실험이 필요하고 이번 결과로 추정하지 않는다.
