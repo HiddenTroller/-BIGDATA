@@ -1,0 +1,5 @@
+  baseline   distances   10,320,000   sse  10,737,882.94    43 iters    18.39s
+  yours      distances    1,222,968   sse  10,737,882.94    43 iters     2.79s
+
+Distance reduction: 88.149535%
+SSE difference: 0.0
