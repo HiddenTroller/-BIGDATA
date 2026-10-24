@@ -1,56 +1,36 @@
-# Task 1 · k-means, and the Thing That Decides the Answer
+# 과제 1 · k-means와 초기화
 
-**File** — `task1_kmeans.py`
-**Theory** — §7.3 k-means, §7.3.2 initialisation
-**Kind** — implementation · runs anywhere
+### 1. R1–R7: 구현
 
----
+`task1_kmeans.py`에서 유클리드 거리, 최근접 중심 배정, 평균 중심 갱신, random·k-means++ 초기화, SSE 계산을 구현했다. 거리 계산은 모든 좌표의 제곱 차 합의 제곱근이며 차원 불일치는 거부한다. 동률은 낮은 중심 인덱스에 배정한다. `kmeans.iterations`에는 실제 반복 횟수를 기록한다.
 
-## What you are building
+SSE는 각 점과 소속 중심 사이의 거리 제곱의 합이다. 배정과 평균 갱신을 반복하며, 레이블이 바뀌지 않거나 최대 반복 횟수에 도달하면 종료한다. 전역 최적해를 항상 보장하는 방법은 아니다.
 
-k-means is four lines. Pick centroids, assign each point to the nearest, move
-each centroid to the mean of its points, repeat. It always converges.
+### 2. R3: 빈 클러스터 처리
 
-It converges to a **local** optimum, and which one depends entirely on where you
-started. That is not a footnote — it is the difference between a clustering that
-means something and one that does not, and you can watch it happen on nine points.
+빈 클러스터는 현재 비어 있지 않은 중심들에서 가장 먼 점으로 다시 초기화한다. 이전 중심을 유지하는 대안과 달리 데이터의 먼 영역으로 중심을 옮겨 군집을 다시 활용할 기회를 준다. 동일 좌표만 있는 데이터에서는 이 방식으로도 k개의 비어 있지 않은 군집을 강제할 수 없다.
 
-## Requirements
+### 3. 초기화 비교
 
-| # | Requirement |
-|---|---|
-| R1 | `euclidean` works in any number of dimensions |
-| R2 | `assign` breaks ties toward the **lower index**, so answers are comparable |
-| R3 | `update` handles an **empty cluster**. Decide what you do and say so |
-| R4 | `kmeans(..., init="random")` picks k starting points at random |
-| R5 | `kmeans(..., init="++")` implements k-means++ from §7.3.2 |
-| R6 | `sse_of` returns the sum of squared distances to each point's own centroid |
-| R7 | Sets `kmeans.iterations` |
+점 9개, 군집 3개에서 seed 0–39를 사용했다. 성공은 세 덩어리를 회복한 SSE<1인 실행으로 집계했다.
 
-R3 is the one with no single right answer. A cluster can lose all its points, and
-the mean of nothing is undefined. Keep the old centroid? Move it to the furthest
-point? Both are defensible and they give different clusterings.
+| 지표 | random | k-means++ |
+|---|---:|---:|
+| 성공 횟수 | 27 / 40 | 40 / 40 |
+| 평균 SSE | 31.31325 | 0.12000 |
+| 최저 SSE | 0.120 | 0.120 |
+| 최고 SSE | 96.105 | 0.120 |
 
-## Pass condition
+현재 구현에서는 random이 27번 성공했다. 원래 안내문의 “대부분 실패”나 평균 SSE 38.511을 내 실행 결과로 옮기지 않는다. 초기화와 빈 군집 처리 방식에 따라 결과가 달라질 수 있다.
 
-```bash
-python3 task1_kmeans.py --verify
-```
+### 4. k-means++가 지불하는 비용
 
-Seven checks. Two of them are about initialisation, across 40 seeds:
+첫 중심은 무작위로 고르고 이후에는 기존 중심까지의 최소 거리 제곱에 비례해 새 중심을 선택한다. 떨어진 위치에서 시작할 가능성을 높여 나쁜 초기화 위험을 줄이는 대신 첫 반복 전부터 거리 계산이 필요하다. 이미 좋은 초기 중심이 있거나 작업이 매우 짧다면 추가 비용의 이득이 작을 수 있다. 이 예제의 40회 성공을 모든 데이터에서의 성공 보장으로 해석하지 않는다.
 
-```
-  ok    random init sometimes lands badly        sse from 0.120 to 96.105
-  ok    k-means++ is more reliable than random   mean sse: ++ 0.120 vs random 38.511
-```
+### 5. SSE만으로 k를 고를 수 없는 이유
 
-Nine points in three obvious blobs, and random initialisation gets it wrong most
-of the time. That is the result to sit with.
+k를 늘리면 달성 가능한 최적 SSE는 증가하지 않는다. k=n이면 각 점을 자기 중심으로 잡아 SSE=0을 만들 수 있으므로 최소 SSE만 고르면 의미 없는 극단에 도달한다. 꺾임, 군집 안정성, 해석 가능성 등을 함께 봐야 한다. 서로 독립적으로 무작위 초기화한 실행에서 관측 SSE가 항상 단조 감소한다는 뜻은 아니다.
 
-## What to write in `observation.md`
+### 6. 검증
 
-- Your R3 choice for empty clusters, and what the alternative would have done
-- Over 40 seeds, how often did random initialisation find the blobs? And ++?
-- k-means++ spends distance computations before the first iteration. What does
-  it buy, and when would you rather not pay?
-- SSE always goes down as k goes up. So why can you not choose k by minimising it?
+2차원 거리, 5차원 거리, 군집 크기, 세 덩어리 회복, SSE 기준, random 초기화의 결과 차이, k-means++ 평균 SSE 비교의 7개 검사가 모두 통과했다.

@@ -1,84 +1,45 @@
-# Task 3 · The Same Clustering, With Far Fewer Distances
+# 과제 3 · 같은 군집을 더 적은 거리 계산으로 구하기
 
-**Files** — `task3_fewer.py` · harness `bench.py` (**do not edit the harness**)
-**Theory** — §7.3, §7.1.3
-**Kind** — improvement · runs anywhere
+### 1. R1–R2: 구현과 기준 유지
 
----
+`task3_fewer.py`의 `YourKMeans(k, max_iter)`는 `run(points, initial_centroids, distance)`로 레이블과 중심을 반환한다. 기준 구현과 동일한 초기 중심·평균 계산·동률 규칙을 사용하며 `bench.py`는 수정하지 않았다. 중심 사이 거리와 중심 이동량도 전달받은 distance 함수로 계산하여 호출 수에 포함한다.
 
-## What you are given
+### 2. 경계의 의미와 가지치기
 
-`NaiveKMeans` does what the definition says: every iteration, compare every point
-with every centroid. n × k distance computations per pass, and on real data the
-distance computation is almost the entire cost.
+점 x의 현재 소속 중심을 a라고 할 때 다음 값을 저장한다.
 
-```bash
-python3 bench.py            # baseline, about 14 seconds
-python3 bench.py --yours
-```
+- u: 현재 중심까지 거리의 상한
+- l: 다른 모든 중심까지 거리의 하한
+- s[a]: 현재 중심과 다른 중심 사이 최소 거리의 절반
 
-```
-  20,000 points in 20 dimensions  ·  k = 12
-```
+u < max(l, s[a])이면 다른 중심으로 바뀔 수 없으므로 비교를 생략한다. 코드에서는 기준선의 동률 허용 오차를 보호하기 위해 `u + 1e-10 < max(l, s[a])`를 사용한다. 실패하면 현재 중심까지 거리를 다시 재어 u를 조이고 한 번 더 검사한다. 여전히 실패하면 모든 중심과 비교한다.
 
-**Where the baseline lands:**
+중심 이동 후 u에는 소속 중심 이동량을 더하고, l에서는 모든 중심 중 최대 이동량을 빼되 0 미만은 0으로 둔다. 삼각부등식에 의해 상한·하한을 유지하는 갱신이다. 증명된 불필요한 비교만 생략하며 근사 군집화를 하는 것이 아니다.
 
-```
-  baseline   distances   10,320,000   sse  10,737,882.94    43 iters   13.33s
-```
+### 3. R5: 저장량과 유지 비용
 
-Ten million distance computations. Most of them are wasted: after the first
-couple of iterations, most points do not change cluster and most centroids barely
-move — and the naive version measures all of it anyway.
+점마다 u와 l 두 수를 저장하므로 n=20,000에서 추가 경계는 40,000개 수다. 두 구현에 공통인 레이블은 별도다. 중심별 s와 이동량은 O(k)이며 O(nk) 크기의 점-중심별 하한 행렬은 저장하지 않는다.
 
-## Requirements
+경계 저장량은 O(n+k)다. 라운드마다 경계 갱신 O(n), 중심 분리 계산 O(k²)와 이동량 계산이 필요하다. 평균 중심 갱신 비용과 실제로 비교하는 거리 계산 비용은 여전히 남는다. 따라서 전체 반복 비용이 단순히 O(n+k²)로 끝나는 것은 아니다.
 
-| # | Requirement |
-|---|---|
-| R1 | `YourKMeans(k, max_iter)` with `run(points, initial_centroids, distance)` |
-| R2 | `bench.py` unmodified |
-| R3 | **Final SSE within 0.1% of the baseline** |
-| R4 | Fewer distance computations |
-| R5 | In `observation.md`: which bound does the work, and what it costs to maintain |
+l은 경쟁 중심과의 간격을, s는 중심 사이 분리를 이용한다. 두 조건 중 더 강한 것을 max로 결합한다. 중심 이동이 작아지면 경계가 오래 유지되어 많은 점을 건너뛸 수 있다. 다만 현재 기록에는 경계별 개별 절감 횟수를 분리한 실험이 없어 어느 경계가 가장 많이 절약했는지는 확인되지 않았다. 이 서술형 요구사항의 실측 비교는 남아 있다.
 
-R3 is strict on purpose. A correct implementation of this gets SSE identical to
-the last decimal, because it does not approximate anything — it only avoids
-measuring things it can prove.
+### 4. R3–R4: 정확성과 호출 수
 
-## Grading
+20,000개 점, 20차원, k=12에서 저장된 측정 결과다.
 
-| | Requirement |
-|---|---|
-| pass | R1–R4, more than 5% cut |
-| good | ≥ **40%** cut |
-| **strong** | ≥ **70%** cut |
+| 지표 | 기준 구현 | 경계 기반 구현 |
+|---|---:|---:|
+| 거리 호출 수 | 10,320,000 | 1,222,968 |
+| SSE | 10737882.944550687 | 10737882.944550687 |
+| 반복 횟수 | 43 | 43 |
 
-A textbook bounds-based version gets about 88% with SSE identical to the last
-digit. If your SSE drifts, you are approximating rather than pruning, and R3
-will catch it.
+거리 호출은 약 88.15% 감소했다. SSE 차이는 0으로 요구 조건 0.1% 이내를 만족하며, 호출 수 감소도 strong 기준인 70% 이상이다. 같은 배정을 바꿀 수 없는 비교만 제거하고 초기화·동률·평균 계산을 유지했기 때문에 결과를 보존한다.
 
-## The idea
+성능 측정 실행 시간은 기준 구현 18.392초, 경계 기반 구현 2.785초였다. 별도 자동 검사 실행에서는 각각 17.78초와 2.65초였다. 시간 차이는 서로 다른 실행의 측정이며 호출 수·SSE·반복 횟수는 동일하다. 시간 개선을 모든 기기의 보장으로 해석하지 않는다.
 
-The triangle inequality:
+### 5. 첫 반복과 추가 검증
 
-> if a point is much closer to its own centroid than that centroid moved, and
-> than any other centroid could have come, then it **cannot** have changed
-> cluster, and you do not have to measure anything
+첫 반복은 유효한 경계가 없어 20,000×12=240,000번의 거리를 계산했다. 최적화 전체 1,222,968회의 약 19.62%다.
 
-You need two things to use that: an upper bound on the distance from each point
-to its own centroid, and something that bounds how close any other centroid could
-be. Both can be updated from how far the centroids moved, which is k distance
-computations per iteration rather than n × k.
-
-That asymmetry — **k is small and n is large** — is the whole opening.
-
-Calls on two centroids are counted too. That is the correct accounting, since it
-is real work, and it is what makes the trade-off honest.
-
-## What to write in `observation.md`
-
-- What you store per point, and how many extra numbers that is
-- R5: which bound eliminates the most work, and what maintaining it costs
-- Your SSE difference from the baseline. If it is exactly zero, say why it had to be
-- The first iteration cannot prune anything. What fraction of your total
-  distance computations happened in it?
+중복 중심·빈 클러스터·동률 등을 포함한 62개 추가 사례에서 레이블과 중심까지 기준선과 일치했다는 기록이 있다. 자동 검사에서는 SSE 일치와 호출 감소가 통과했으며 R5의 설명은 사람 평가 대상이다.
