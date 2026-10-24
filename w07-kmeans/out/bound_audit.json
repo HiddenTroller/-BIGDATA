@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-24",
+  "python": "3.12.14",
+  "cpu": "AMD Ryzen 7 9800X3D",
+  "baseline": {
+    "calls": 10320000,
+    "seconds": 17.82044469999994,
+    "iterations": 43,
+    "sse": 10737882.944550687
+  },
+  "original": {
+    "calls": 1222968,
+    "seconds": 2.7158140999999887,
+    "iterations": 43,
+    "sse": 10737882.944550687
+  },
+  "instrumented": {
+    "calls": 1222968,
+    "seconds": 2.790555900000072,
+    "iterations": 43,
+    "sse": 10737882.944550687,
+    "skip_stats": {
+      "before": {
+        "lower_only": 443889,
+        "separation_only": 213511,
+        "both": 66692
+      },
+      "after": {
+        "lower_only": 37572,
+        "separation_only": 4626,
+        "both": 1728
+      }
+    }
+  },
+  "exact_labels_and_centres": true,
+  "machine": {
+    "processor": "AMD Ryzen 7 9800X3D 8-Core Processor",
+    "installed_ram_gib": 32,
+    "background_programs": "None reported"
+  }
+}

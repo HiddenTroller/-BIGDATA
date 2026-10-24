@@ -134,8 +134,10 @@
     }
   ],
   "machine": {
-    "platform": "Local measurement; device details retained in private local record",
-    "privacy_note": "Hardware, operating-system details and available memory omitted from public copy."
+    "processor": "AMD Ryzen 7 9800X3D 8-Core Processor",
+    "installed_ram_gib": 32,
+    "background_programs": "None reported",
+    "verification": "CPU checked locally; user confirmed installed RAM and that original measurements used this computer on 2026-10-24."
   },
   "measurement_note": "Actual local execution; tracemalloc peaks exclude prebuilt input and native allocations. Timings are single runs."
 }
