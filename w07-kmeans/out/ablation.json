@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-24",
+  "machine": {
+    "cpu": "AMD Ryzen 7 9800X3D",
+    "ram_gib": 32
+  },
+  "python": "3.12.14",
+  "method": "Full, lower only, and separation only; same input, initial centroids and tie rules. Counts include centre separation and movement calls.",
+  "baseline": {
+    "calls": 10320000,
+    "seconds": 18.205335500000047,
+    "iterations": 43,
+    "sse": 10737882.944550687,
+    "exact_labels_and_centres": true
+  },
+  "full": {
+    "calls": 1222968,
+    "seconds": 2.7693360999999186,
+    "iterations": 43,
+    "sse": 10737882.944550687,
+    "exact_labels_and_centres": true
+  },
+  "lower_only": {
+    "calls": 1287512,
+    "seconds": 2.837793500000089,
+    "iterations": 43,
+    "sse": 10737882.944550687,
+    "exact_labels_and_centres": true
+  },
+  "separation_only": {
+    "calls": 7424326,
+    "seconds": 14.407556500000055,
+    "iterations": 43,
+    "sse": 10737882.944550687,
+    "exact_labels_and_centres": true
+  },
+  "timing_note": "Some supplemental experiments ran concurrently; elapsed times are actual observations, not evidence of general speed ratios."
+}
